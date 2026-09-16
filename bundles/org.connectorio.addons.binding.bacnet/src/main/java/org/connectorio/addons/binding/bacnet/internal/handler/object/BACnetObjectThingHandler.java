@@ -106,9 +106,13 @@ public class BACnetObjectThingHandler<T extends BACnetObject, B extends BACnetDe
             source.add(pollInterval, channel.getUID().getAsString(),
                 new BACnetObjectsSampler(client, object, property, consumer));
 
-            if (Names.PRESENT_VALUE.equals(property)) {
+            if (Names.PRESENT_VALUE.equals(property) && this.covSubscription == null) {
               this.covSubscription = new BACnetCovSubscription(client, object, 300, false, consumer);
-              this.covSubscription.start();
+              try {
+                this.covSubscription.start();
+              } catch (RuntimeException e) {
+                logger.warn("Unable to start COV subscription for {}; polling remains active", object, e);
+              }
             }
           }
           this.source.start();
@@ -206,13 +210,17 @@ public class BACnetObjectThingHandler<T extends BACnetObject, B extends BACnetDe
   public void dispose() {
     super.dispose();
 
-    if (covSubscription != null) {
-      covSubscription.close();
+    try {
+      if (covSubscription != null) {
+        covSubscription.close();
+      }
+    } catch (RuntimeException e) {
+      logger.warn("Unable to close COV subscription for {}", object, e);
+    } finally {
       covSubscription = null;
-    }
-
-    if (source != null) {
-      source.stop();
+      if (source != null) {
+        source.stop();
+      }
     }
   }
 
