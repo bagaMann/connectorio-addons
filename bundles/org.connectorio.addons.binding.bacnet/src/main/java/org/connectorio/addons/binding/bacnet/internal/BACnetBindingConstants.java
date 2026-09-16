@@ -109,7 +109,7 @@ public interface BACnetBindingConstants {
     ThingTypeUID DATE_PATTERN_THING_TYPE = new ThingTypeUID(BINDING_ID, DATE_PATTERN_TYPE);
     ThingTypeUID ACCUMULATOR_THING_TYPE = new ThingTypeUID(BINDING_ID, ACCUMULATOR_TYPE);
 
-    Long DEFAULT_POLLING_INTERVAL = 1000L;
+    Long DEFAULT_POLLING_INTERVAL = 60000L;
 
     ChannelTypeUID WRITEABLE_BINARY_CHANNEL_TYPE = new ChannelTypeUID(BINDING_ID, "writeableBinary");
     ChannelTypeUID READABLE_BINARY_CHANNEL_TYPE = new ChannelTypeUID(BINDING_ID, "readableBinary");
