@@ -44,6 +44,7 @@ import org.connectorio.addons.binding.bacnet.internal.config.ChannelConfig;
 import org.connectorio.addons.binding.bacnet.internal.config.ObjectConfig;
 import org.connectorio.addons.binding.bacnet.internal.handler.channel.converter.CompositeConverter;
 import org.connectorio.addons.binding.bacnet.internal.handler.object.task.Names;
+import org.connectorio.addons.binding.bacnet.internal.handler.source.BACnetCovSubscription;
 import org.connectorio.addons.binding.bacnet.internal.handler.source.BACnetObjectsSampler;
 import org.connectorio.addons.binding.bacnet.internal.handler.source.BACnetPropertySampler;
 import org.connectorio.addons.binding.bacnet.internal.handler.source.BACnetSamplerComposer;
@@ -71,6 +72,7 @@ public class BACnetObjectThingHandler<T extends BACnetObject, B extends BACnetDe
   private BacNetObject object;
   private Priority writePriority;
   private SamplingSource<BACnetPropertySampler> source;
+  private BACnetCovSubscription covSubscription;
 
   public BACnetObjectThingHandler(Thing thing, Type type, SourceFactory sourceFactory) {
     super(thing);
@@ -97,9 +99,17 @@ public class BACnetObjectThingHandler<T extends BACnetObject, B extends BACnetDe
           this.source = sourceFactory.sampling(scheduler, new BACnetSamplerComposer(client));
           for (Channel channel : thing.getChannels()) {
             Long pollInterval = channelPollInterval(channel.getUID());
+            String property = Names.dashed(channel.getUID().getId());
 
-            Consumer<Encodable> consumer = new SamplerCallback(CompositeConverter.INSTANCE, new ChannelCallback(getCallback(), channel));
-            source.add(pollInterval, channel.getUID().getAsString(), new BACnetObjectsSampler(client, object, Names.dashed(channel.getUID().getId()), consumer));
+            Consumer<Encodable> consumer = new SamplerCallback(
+                CompositeConverter.INSTANCE, new ChannelCallback(getCallback(), channel));
+            source.add(pollInterval, channel.getUID().getAsString(),
+                new BACnetObjectsSampler(client, object, property, consumer));
+
+            if (Names.PRESENT_VALUE.equals(property)) {
+              this.covSubscription = new BACnetCovSubscription(client, object, 300, false, consumer);
+              this.covSubscription.start();
+            }
           }
           this.source.start();
           updateStatus(ThingStatus.ONLINE);
@@ -195,6 +205,11 @@ public class BACnetObjectThingHandler<T extends BACnetObject, B extends BACnetDe
   @Override
   public void dispose() {
     super.dispose();
+
+    if (covSubscription != null) {
+      covSubscription.close();
+      covSubscription = null;
+    }
 
     if (source != null) {
       source.stop();
