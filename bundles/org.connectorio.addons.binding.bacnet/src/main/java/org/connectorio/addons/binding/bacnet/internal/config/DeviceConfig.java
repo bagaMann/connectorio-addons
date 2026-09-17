@@ -29,7 +29,8 @@ public class DeviceConfig extends BACnetConfig {
   public boolean discoverObjects = false;
   public boolean discoverChannels = true;
 
-  public boolean covEnabled = true;
+  /** polling, cov, or polling-cov. */
+  public String updateMode = "polling-cov";
   public int covLifetime = 300;
 
 }
