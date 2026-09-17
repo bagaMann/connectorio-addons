@@ -68,8 +68,6 @@ import org.slf4j.LoggerFactory;
 public class BACnetObjectThingHandler<T extends BACnetObject, B extends BACnetDeviceBridgeHandler<?, ?>, C extends ObjectConfig>
   extends BasePollingThingHandler<B, C> implements ObjectHandler {
 
-  private static final int COV_LIFETIME_SECONDS = 300;
-  private static final int COV_RENEWAL_SECONDS = 240;
   private static final int COV_RETRY_SECONDS = 30;
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -80,6 +78,8 @@ public class BACnetObjectThingHandler<T extends BACnetObject, B extends BACnetDe
   private SamplingSource<BACnetPropertySampler> source;
   private BACnetCovSubscription covSubscription;
   private ScheduledFuture<?> covRenewalTask;
+  private int covLifetimeSeconds;
+  private int covRenewalSeconds;
   private volatile boolean disposed;
 
   public BACnetObjectThingHandler(Thing thing, Type type, SourceFactory sourceFactory) {
@@ -94,6 +94,8 @@ public class BACnetObjectThingHandler<T extends BACnetObject, B extends BACnetDe
     Device device = getBridgeHandler().map(b -> b.getDevice()).orElse(null);
     int instance = getThingConfig().map(c -> c.instance).orElseThrow(() -> new IllegalStateException("Undefined instance number"));
     writePriority = getThingConfig().map(c -> c.writePriority).flatMap(Priorities::get).orElse(null);
+    covLifetimeSeconds = getThingConfig().map(c -> c.covLifetime).orElse(300);
+    covRenewalSeconds = Math.max(1, covLifetimeSeconds * 4 / 5);
 
     if (device != null) {
       this.object = new BacNetObject(device, instance, type);
@@ -116,10 +118,10 @@ public class BACnetObjectThingHandler<T extends BACnetObject, B extends BACnetDe
                 new BACnetObjectsSampler(client, object, property, consumer));
 
             if (Names.PRESENT_VALUE.equals(property) && this.covSubscription == null) {
-              this.covSubscription = new BACnetCovSubscription(client, object, COV_LIFETIME_SECONDS, false, consumer);
+              this.covSubscription = new BACnetCovSubscription(client, object, covLifetimeSeconds, false, consumer);
               try {
                 this.covSubscription.start();
-                scheduleCovRenewal(COV_RENEWAL_SECONDS);
+                scheduleCovRenewal(covRenewalSeconds);
               } catch (RuntimeException e) {
                 logger.warn("Unable to start COV subscription for {}; polling remains active", object, e);
               }
@@ -157,7 +159,7 @@ public class BACnetObjectThingHandler<T extends BACnetObject, B extends BACnetDe
     try {
       subscription.renew();
       logger.debug("Renewed COV subscription for {}", object);
-      scheduleCovRenewal(COV_RENEWAL_SECONDS);
+      scheduleCovRenewal(covRenewalSeconds);
     } catch (RuntimeException e) {
       logger.warn("Unable to renew COV subscription for {}; polling remains active, retrying in {} seconds",
           object, COV_RETRY_SECONDS, e);
