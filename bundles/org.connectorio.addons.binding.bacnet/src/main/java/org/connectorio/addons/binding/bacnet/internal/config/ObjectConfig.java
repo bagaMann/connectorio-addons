@@ -25,6 +25,7 @@ public class ObjectConfig extends DeviceConfig {
 
   public int instance;
   public Integer writePriority;
+  public String updateMode = "polling-cov";
   public int covLifetime = 300;
 
 }
