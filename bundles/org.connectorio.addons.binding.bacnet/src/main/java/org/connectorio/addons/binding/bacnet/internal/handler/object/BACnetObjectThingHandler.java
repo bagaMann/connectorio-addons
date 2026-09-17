@@ -69,6 +69,9 @@ public class BACnetObjectThingHandler<T extends BACnetObject, B extends BACnetDe
   extends BasePollingThingHandler<B, C> implements ObjectHandler {
 
   private static final int COV_RETRY_SECONDS = 30;
+  private static final String UPDATE_MODE_POLLING = "polling";
+  private static final String UPDATE_MODE_COV = "cov";
+  private static final String UPDATE_MODE_POLLING_COV = "polling-cov";
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
   private final Type type;
@@ -80,6 +83,7 @@ public class BACnetObjectThingHandler<T extends BACnetObject, B extends BACnetDe
   private ScheduledFuture<?> covRenewalTask;
   private int covLifetimeSeconds;
   private int covRenewalSeconds;
+  private String updateMode;
   private volatile boolean disposed;
 
   public BACnetObjectThingHandler(Thing thing, Type type, SourceFactory sourceFactory) {
@@ -94,6 +98,7 @@ public class BACnetObjectThingHandler<T extends BACnetObject, B extends BACnetDe
     Device device = getBridgeHandler().map(b -> b.getDevice()).orElse(null);
     int instance = getThingConfig().map(c -> c.instance).orElseThrow(() -> new IllegalStateException("Undefined instance number"));
     writePriority = getThingConfig().map(c -> c.writePriority).flatMap(Priorities::get).orElse(null);
+    updateMode = getThingConfig().map(c -> c.updateMode).orElse(UPDATE_MODE_POLLING_COV);
     covLifetimeSeconds = getThingConfig().map(c -> c.covLifetime).orElse(300);
     covRenewalSeconds = Math.max(1, covLifetimeSeconds * 4 / 5);
 
@@ -108,26 +113,34 @@ public class BACnetObjectThingHandler<T extends BACnetObject, B extends BACnetDe
         bridge.getClient().thenAccept(client -> {
 
           this.source = sourceFactory.sampling(scheduler, new BACnetSamplerComposer(client));
+          boolean pollingEnabled = UPDATE_MODE_POLLING.equals(updateMode) || UPDATE_MODE_POLLING_COV.equals(updateMode);
+          boolean covEnabled = UPDATE_MODE_COV.equals(updateMode) || UPDATE_MODE_POLLING_COV.equals(updateMode);
+
           for (Channel channel : thing.getChannels()) {
             Long pollInterval = channelPollInterval(channel.getUID());
             String property = Names.dashed(channel.getUID().getId());
 
             Consumer<Encodable> consumer = new SamplerCallback(
                 CompositeConverter.INSTANCE, new ChannelCallback(getCallback(), channel));
-            source.add(pollInterval, channel.getUID().getAsString(),
-                new BACnetObjectsSampler(client, object, property, consumer));
+            if (pollingEnabled) {
+              source.add(pollInterval, channel.getUID().getAsString(),
+                  new BACnetObjectsSampler(client, object, property, consumer));
+            }
 
-            if (Names.PRESENT_VALUE.equals(property) && this.covSubscription == null) {
+            if (covEnabled && Names.PRESENT_VALUE.equals(property) && this.covSubscription == null) {
               this.covSubscription = new BACnetCovSubscription(client, object, covLifetimeSeconds, false, consumer);
               try {
                 this.covSubscription.start();
                 scheduleCovRenewal(covRenewalSeconds);
               } catch (RuntimeException e) {
-                logger.warn("Unable to start COV subscription for {}; polling remains active", object, e);
+                logger.warn("Unable to start COV subscription for {}; polling {}", object,
+                    pollingEnabled ? "remains active" : "is disabled by configuration", e);
               }
             }
           }
-          this.source.start();
+          if (pollingEnabled) {
+            this.source.start();
+          }
           updateStatus(ThingStatus.ONLINE);
         });
       });
@@ -161,8 +174,9 @@ public class BACnetObjectThingHandler<T extends BACnetObject, B extends BACnetDe
       logger.debug("Renewed COV subscription for {}", object);
       scheduleCovRenewal(covRenewalSeconds);
     } catch (RuntimeException e) {
-      logger.warn("Unable to renew COV subscription for {}; polling remains active, retrying in {} seconds",
-          object, COV_RETRY_SECONDS, e);
+      boolean pollingEnabled = UPDATE_MODE_POLLING.equals(updateMode) || UPDATE_MODE_POLLING_COV.equals(updateMode);
+      logger.warn("Unable to renew COV subscription for {}; polling {}, retrying in {} seconds",
+          object, pollingEnabled ? "remains active" : "is disabled by configuration", COV_RETRY_SECONDS, e);
       scheduleCovRenewal(COV_RETRY_SECONDS);
     }
   }
