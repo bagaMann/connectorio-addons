@@ -36,6 +36,16 @@
       <description>Instance number of object.</description>
     </parameter>
 
+    <parameter name="updateMode" type="text" groupName="basic" required="false">
+      <label>Update mode</label>
+      <description>Select whether values are updated by polling, BACnet COV, or both. In COV-only mode automatic polling is disabled; manual refresh remains available.</description>
+      <default>polling-cov</default>
+      <options>
+        <option value="polling">Polling only</option>
+        <option value="cov">COV only</option>
+        <option value="polling-cov">Polling and COV</option>
+      </options>
+    </parameter>
     <parameter name="refreshInterval" type="integer" groupName="basic" required="false">
       <label>Refresh interval</label>
       <description>
