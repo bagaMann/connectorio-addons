@@ -6,8 +6,6 @@
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- *     https://www.gnu.org/licenses/gpl-3.0.txt
- *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -24,5 +22,9 @@ package org.connectorio.addons.binding.bacnet.internal.config;
 import org.connectorio.addons.binding.config.PollingConfiguration;
 
 public class ChannelConfig extends PollingConfiguration {
+
+  public ChannelConfig() {
+    refreshInterval = 0L;
+  }
 
 }
