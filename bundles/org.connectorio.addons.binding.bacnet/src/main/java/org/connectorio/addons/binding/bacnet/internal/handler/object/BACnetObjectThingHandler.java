@@ -28,6 +28,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.code_house.bacnet4j.wrapper.api.BacNetClient;
 import org.code_house.bacnet4j.wrapper.api.BacNetObject;
@@ -66,6 +68,10 @@ import org.slf4j.LoggerFactory;
 public class BACnetObjectThingHandler<T extends BACnetObject, B extends BACnetDeviceBridgeHandler<?, ?>, C extends ObjectConfig>
   extends BasePollingThingHandler<B, C> implements ObjectHandler {
 
+  private static final int COV_LIFETIME_SECONDS = 300;
+  private static final int COV_RENEWAL_SECONDS = 240;
+  private static final int COV_RETRY_SECONDS = 30;
+
   private final Logger logger = LoggerFactory.getLogger(getClass());
   private final Type type;
   private final SourceFactory sourceFactory;
@@ -73,6 +79,8 @@ public class BACnetObjectThingHandler<T extends BACnetObject, B extends BACnetDe
   private Priority writePriority;
   private SamplingSource<BACnetPropertySampler> source;
   private BACnetCovSubscription covSubscription;
+  private ScheduledFuture<?> covRenewalTask;
+  private volatile boolean disposed;
 
   public BACnetObjectThingHandler(Thing thing, Type type, SourceFactory sourceFactory) {
     super(thing);
@@ -82,6 +90,7 @@ public class BACnetObjectThingHandler<T extends BACnetObject, B extends BACnetDe
 
   @Override
   public void initialize() {
+    disposed = false;
     Device device = getBridgeHandler().map(b -> b.getDevice()).orElse(null);
     int instance = getThingConfig().map(c -> c.instance).orElseThrow(() -> new IllegalStateException("Undefined instance number"));
     writePriority = getThingConfig().map(c -> c.writePriority).flatMap(Priorities::get).orElse(null);
@@ -107,9 +116,10 @@ public class BACnetObjectThingHandler<T extends BACnetObject, B extends BACnetDe
                 new BACnetObjectsSampler(client, object, property, consumer));
 
             if (Names.PRESENT_VALUE.equals(property) && this.covSubscription == null) {
-              this.covSubscription = new BACnetCovSubscription(client, object, 300, false, consumer);
+              this.covSubscription = new BACnetCovSubscription(client, object, COV_LIFETIME_SECONDS, false, consumer);
               try {
                 this.covSubscription.start();
+                scheduleCovRenewal(COV_RENEWAL_SECONDS);
               } catch (RuntimeException e) {
                 logger.warn("Unable to start COV subscription for {}; polling remains active", object, e);
               }
@@ -121,6 +131,37 @@ public class BACnetObjectThingHandler<T extends BACnetObject, B extends BACnetDe
       });
     } else {
       updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.BRIDGE_OFFLINE, "Link object to device");
+    }
+  }
+
+  private synchronized void scheduleCovRenewal(long delaySeconds) {
+    if (disposed || covSubscription == null || !covSubscription.isActive()) {
+      return;
+    }
+    if (covRenewalTask != null) {
+      covRenewalTask.cancel(false);
+    }
+    covRenewalTask = scheduler.schedule(this::renewCovSubscription, delaySeconds, TimeUnit.SECONDS);
+  }
+
+  private void renewCovSubscription() {
+    if (disposed) {
+      return;
+    }
+
+    BACnetCovSubscription subscription = covSubscription;
+    if (subscription == null || !subscription.isActive()) {
+      return;
+    }
+
+    try {
+      subscription.renew();
+      logger.debug("Renewed COV subscription for {}", object);
+      scheduleCovRenewal(COV_RENEWAL_SECONDS);
+    } catch (RuntimeException e) {
+      logger.warn("Unable to renew COV subscription for {}; polling remains active, retrying in {} seconds",
+          object, COV_RETRY_SECONDS, e);
+      scheduleCovRenewal(COV_RETRY_SECONDS);
     }
   }
 
@@ -208,7 +249,14 @@ public class BACnetObjectThingHandler<T extends BACnetObject, B extends BACnetDe
 
   @Override
   public void dispose() {
+    disposed = true;
     super.dispose();
+
+    ScheduledFuture<?> renewalTask = covRenewalTask;
+    covRenewalTask = null;
+    if (renewalTask != null) {
+      renewalTask.cancel(false);
+    }
 
     try {
       if (covSubscription != null) {
