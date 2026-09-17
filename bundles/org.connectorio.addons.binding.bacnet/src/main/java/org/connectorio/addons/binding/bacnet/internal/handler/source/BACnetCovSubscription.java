@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import org.code_house.bacnet4j.wrapper.api.BacNetClient;
 import org.code_house.bacnet4j.wrapper.api.BacNetObject;
+import org.code_house.bacnet4j.wrapper.api.CovListener;
 import org.code_house.bacnet4j.wrapper.api.CovSubscription;
 import com.serotonin.bacnet4j.type.Encodable;
 
@@ -31,10 +32,16 @@ public final class BACnetCovSubscription implements AutoCloseable {
   private final int lifetime;
   private final boolean confirmed;
   private final Consumer<Encodable> callback;
+  private final Consumer<Encodable> statusFlagsCallback;
   private final AtomicReference<CovSubscription> subscription = new AtomicReference<>();
 
   public BACnetCovSubscription(BacNetClient client, BacNetObject object, int lifetime, boolean confirmed,
       Consumer<Encodable> callback) {
+    this(client, object, lifetime, confirmed, callback, statusFlags -> { });
+  }
+
+  public BACnetCovSubscription(BacNetClient client, BacNetObject object, int lifetime, boolean confirmed,
+      Consumer<Encodable> callback, Consumer<Encodable> statusFlagsCallback) {
     this.client = Objects.requireNonNull(client, "client");
     this.object = Objects.requireNonNull(object, "object");
     if (lifetime <= 0) {
@@ -43,6 +50,7 @@ public final class BACnetCovSubscription implements AutoCloseable {
     this.lifetime = lifetime;
     this.confirmed = confirmed;
     this.callback = Objects.requireNonNull(callback, "callback");
+    this.statusFlagsCallback = Objects.requireNonNull(statusFlagsCallback, "statusFlagsCallback");
   }
 
   /** Start the subscription once. */
@@ -52,8 +60,17 @@ public final class BACnetCovSubscription implements AutoCloseable {
       return;
     }
 
-    subscription.set(client.subscribeCov(object, lifetime, confirmed,
-        (source, presentValue, timeRemaining) -> callback.accept(presentValue)));
+    subscription.set(client.subscribeCov(object, lifetime, confirmed, new CovListener() {
+      @Override
+      public void onCovNotification(BacNetObject source, Encodable presentValue, long timeRemaining) {
+        callback.accept(presentValue);
+      }
+
+      @Override
+      public void onCovStatusFlags(BacNetObject source, Encodable statusFlags, long timeRemaining) {
+        statusFlagsCallback.accept(statusFlags);
+      }
+    }));
   }
 
   /** Renew the existing remote subscription. */
