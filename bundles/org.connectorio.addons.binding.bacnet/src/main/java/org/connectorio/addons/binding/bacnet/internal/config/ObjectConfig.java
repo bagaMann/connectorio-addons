@@ -25,5 +25,6 @@ public class ObjectConfig extends DeviceConfig {
 
   public int instance;
   public Integer writePriority;
+  public int covLifetime = 300;
 
 }
