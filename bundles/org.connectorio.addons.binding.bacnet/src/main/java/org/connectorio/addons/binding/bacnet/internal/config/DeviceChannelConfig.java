@@ -29,6 +29,8 @@ public class DeviceChannelConfig extends PollingConfiguration {
   public int instance;
   public Type type;
   public String propertyIdentifier;
+  /** One of in-alarm, fault, overridden, out-of-service for split Status_Flags channels. */
+  public String statusFlag;
 
   public Integer writePriority;
   public boolean readOnly;
