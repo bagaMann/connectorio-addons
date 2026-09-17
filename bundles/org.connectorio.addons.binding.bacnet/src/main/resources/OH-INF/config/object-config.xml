@@ -44,6 +44,14 @@
       <unitLabel>ms</unitLabel>
       <default>0</default>
     </parameter>
+    <parameter name="covLifetime" type="integer" groupName="basic" required="false" min="30">
+      <label>COV subscription lifetime</label>
+      <description>
+        Requested lifetime of a BACnet COV subscription. The subscription is renewed automatically at 80 percent of this interval.
+      </description>
+      <unitLabel>s</unitLabel>
+      <default>300</default>
+    </parameter>
     <parameter name="writePriority" type="integer" groupName="basic" required="false" min="1" max="16">
       <label>Write priority</label>
       <description>
