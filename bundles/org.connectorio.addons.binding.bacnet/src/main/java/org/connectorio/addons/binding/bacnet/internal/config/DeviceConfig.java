@@ -29,4 +29,7 @@ public class DeviceConfig extends BACnetConfig {
   public boolean discoverObjects = false;
   public boolean discoverChannels = true;
 
+  public boolean covEnabled = true;
+  public int covLifetime = 300;
+
 }
