@@ -137,14 +137,6 @@
         <description>Automatically create Out_Of_Service channels for discovered BACnet objects.</description>
         <default>false</default>
       </parameter>
-        <label>Discover objects</label>
-        <description>
-          Enabling this feature will look for BACnet objects which can be mapped to Thing instances.
-          For each supported BACnet object there will be one Thing instance.
-          Please be aware that it most of the situations it will lead to multiplication of things.
-        </description>
-        <default>false</default>
-      </parameter>
     </config-description>
   </bridge-type>
 
