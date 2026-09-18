@@ -26,6 +26,7 @@ import static com.serotonin.bacnet4j.type.enumerated.ErrorClass.object;
 import com.serotonin.bacnet4j.obj.DeviceObject;
 import com.serotonin.bacnet4j.type.Encodable;
 import com.serotonin.bacnet4j.type.constructed.StatusFlags;
+import com.serotonin.bacnet4j.type.enumerated.EventState;
 import com.serotonin.bacnet4j.type.enumerated.PropertyIdentifier;
 import com.serotonin.bacnet4j.type.primitive.Null;
 import java.util.ArrayList;
@@ -179,10 +180,19 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
   private void updateChannels(BacNetClient client) {
     BridgeBuilder builder = editThing();
     builder.withChannels(new ArrayList<>());
+    DeviceConfig config = getConfigAs(DeviceConfig.class);
     for (BacNetObject object : client.getDeviceObjects(device)) {
-      createChannel(builder, object, PropertyIdentifier.presentValue);
-      if (supportsStatusFlags(object.getType())) {
+      if (config.discoverPresentValue) {
+        createChannel(builder, object, PropertyIdentifier.presentValue);
+      }
+      if (config.discoverStatusFlags && supportsStatusFlags(object.getType())) {
         createStatusFlagsChannel(builder, object);
+      }
+      if (config.discoverEventState && supportsEventState(object.getType())) {
+        createEventStateChannel(builder, object);
+      }
+      if (config.discoverOutOfService && supportsOutOfService(object.getType())) {
+        createOutOfServiceChannel(builder, object);
       }
       if (Type.SCHEDULE.equals(object.getType())) {
         createChannel(builder, object, PropertyIdentifier.weeklySchedule);
@@ -192,6 +202,27 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
       }
     }
     updateThing(builder.build());
+  }
+
+  private boolean supportsEventState(Type type) {
+    switch (type) {
+      case ANALOG_INPUT:
+      case ANALOG_OUTPUT:
+      case ANALOG_VALUE:
+      case BINARY_INPUT:
+      case BINARY_OUTPUT:
+      case BINARY_VALUE:
+      case MULTISTATE_INPUT:
+      case MULTISTATE_OUTPUT:
+      case MULTISTATE_VALUE:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  private boolean supportsOutOfService(Type type) {
+    return supportsEventState(type);
   }
 
   private boolean supportsStatusFlags(Type type) {
@@ -226,6 +257,44 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
       .withLabel(object.getName() + " - Status flags")
       .withDescription(object.getDescription())
       .withAcceptedItemType(CoreItemFactory.NUMBER)
+      .build();
+    builder.withChannel(channel);
+  }
+
+  private void createEventStateChannel(BridgeBuilder builder, BacNetObject object) {
+    String channelId = object.getType().name().toLowerCase() + "-" + object.getId() + "-event-state";
+    ChannelUID uid = new ChannelUID(thing.getUID(), channelId);
+    Map<String, Object> properties = new LinkedHashMap<>();
+    properties.put("instance", object.getId());
+    properties.put("type", object.getType().name());
+    properties.put("readOnly", true);
+    properties.put("propertyIdentifier", PropertyIdentifier.eventState.toString());
+    properties.put("refreshInterval", 0);
+    Channel channel = ChannelBuilder.create(uid)
+      .withType(new ChannelTypeUID(BACnetBindingConstants.BINDING_ID, "deviceReadableEventState"))
+      .withConfiguration(new Configuration(properties))
+      .withLabel(object.getName() + " - Event state")
+      .withDescription(object.getDescription())
+      .withAcceptedItemType(CoreItemFactory.NUMBER)
+      .build();
+    builder.withChannel(channel);
+  }
+
+  private void createOutOfServiceChannel(BridgeBuilder builder, BacNetObject object) {
+    String channelId = object.getType().name().toLowerCase() + "-" + object.getId() + "-out-of-service";
+    ChannelUID uid = new ChannelUID(thing.getUID(), channelId);
+    Map<String, Object> properties = new LinkedHashMap<>();
+    properties.put("instance", object.getId());
+    properties.put("type", object.getType().name());
+    properties.put("readOnly", true);
+    properties.put("propertyIdentifier", PropertyIdentifier.outOfService.toString());
+    properties.put("refreshInterval", 0);
+    Channel channel = ChannelBuilder.create(uid)
+      .withType(new ChannelTypeUID(BACnetBindingConstants.BINDING_ID, "deviceReadableOutOfService"))
+      .withConfiguration(new Configuration(properties))
+      .withLabel(object.getName() + " - Out of service")
+      .withDescription(object.getDescription())
+      .withAcceptedItemType(CoreItemFactory.SWITCH)
       .build();
     builder.withChannel(channel);
   }
@@ -367,6 +436,12 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
           if (PropertyIdentifier.statusFlags.toString().equals(attribute)) {
             source.request(new BACnetObjectsSampler(client, object, PropertyIdentifier.statusFlags.toString(),
               value -> updateStatusFlags(channel, value)));
+          } else if (PropertyIdentifier.eventState.toString().equals(attribute)) {
+            source.request(new BACnetObjectsSampler(client, object, PropertyIdentifier.eventState.toString(),
+              value -> updateEventState(channel, value)));
+          } else if (PropertyIdentifier.outOfService.toString().equals(attribute)) {
+            source.request(new BACnetObjectsSampler(client, object, PropertyIdentifier.outOfService.toString(),
+              value -> updateOutOfService(channel, value)));
           } else {
             source.request(new BACnetObjectsSampler(client, object, attribute, new SamplerCallback(
               CompositeConverter.INSTANCE, new ChannelCallback(getCallback(), channel))));
@@ -457,7 +532,27 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
           source.add(refreshInterval, channel.getUID().getAsString(),
             new BACnetObjectsSampler(client, object, PropertyIdentifier.statusFlags.toString(), statusConsumer));
         }
-        if (covManager != null) covManager.add(object, null, statusConsumer);
+        if (covManager != null) covManager.add(object, null, statusConsumer, null, null);
+        continue;
+      }
+
+      if (PropertyIdentifier.eventState.toString().equals(config.propertyIdentifier)) {
+        Consumer<Encodable> eventConsumer = value -> updateEventState(channel, value);
+        if (pollingEnabled) {
+          source.add(refreshInterval, channel.getUID().getAsString(),
+            new BACnetObjectsSampler(client, object, PropertyIdentifier.eventState.toString(), eventConsumer));
+        }
+        if (covManager != null) covManager.add(object, null, null, eventConsumer, null);
+        continue;
+      }
+
+      if (PropertyIdentifier.outOfService.toString().equals(config.propertyIdentifier)) {
+        Consumer<Encodable> outOfServiceConsumer = value -> updateOutOfService(channel, value);
+        if (pollingEnabled) {
+          source.add(refreshInterval, channel.getUID().getAsString(),
+            new BACnetObjectsSampler(client, object, PropertyIdentifier.outOfService.toString(), outOfServiceConsumer));
+        }
+        if (covManager != null) covManager.add(object, null, null, null, outOfServiceConsumer);
         continue;
       }
 
@@ -467,11 +562,28 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
           new BACnetObjectsSampler(client, object, config.propertyIdentifier, consumer));
       }
       if (covManager != null && PropertyIdentifier.presentValue.toString().equals(config.propertyIdentifier)) {
-        covManager.add(object, consumer, null);
+        covManager.add(object, consumer, null, null, null);
       }
     }
 
     if (covManager != null) covManager.start();
+  }
+
+  private void updateEventState(Channel channel, Encodable value) {
+    if (!(value instanceof EventState)) {
+      logger.warn("Expected EventState for channel {}, got {}", channel.getUID(), value);
+      return;
+    }
+    getCallback().stateUpdated(channel.getUID(), new DecimalType(Integer.toString(((EventState) value).intValue())));
+  }
+
+  private void updateOutOfService(Channel channel, Encodable value) {
+    if (!(value instanceof com.serotonin.bacnet4j.type.primitive.Boolean)) {
+      logger.warn("Expected BACnet Boolean for channel {}, got {}", channel.getUID(), value);
+      return;
+    }
+    boolean state = ((com.serotonin.bacnet4j.type.primitive.Boolean) value).booleanValue();
+    getCallback().stateUpdated(channel.getUID(), new org.openhab.core.library.types.OnOffType(state));
   }
 
   private void updateStatusFlags(Channel channel, Encodable value) {
