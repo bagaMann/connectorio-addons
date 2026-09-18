@@ -159,6 +159,33 @@
     <config-description-ref uri="thing-type:co7io-bacnet:device-read-only"></config-description-ref>
   </channel-type>
 
+  <channel-type id="deviceReadableStatusFlags">
+    <item-type>Number</item-type>
+    <label>Status flags</label>
+    <description>BACnet Status_Flags bitmask: 1 In Alarm, 2 Fault, 4 Overridden, 8 Out of Service.</description>
+    <state>
+      <options>
+        <option value="0">Normal</option>
+        <option value="1">In Alarm</option>
+        <option value="2">Fault</option>
+        <option value="3">In Alarm + Fault</option>
+        <option value="4">Overridden</option>
+        <option value="5">In Alarm + Overridden</option>
+        <option value="6">Fault + Overridden</option>
+        <option value="7">In Alarm + Fault + Overridden</option>
+        <option value="8">Out of Service</option>
+        <option value="9">In Alarm + Out of Service</option>
+        <option value="10">Fault + Out of Service</option>
+        <option value="11">In Alarm + Fault + Out of Service</option>
+        <option value="12">Overridden + Out of Service</option>
+        <option value="13">In Alarm + Overridden + Out of Service</option>
+        <option value="14">Fault + Overridden + Out of Service</option>
+        <option value="15">In Alarm + Fault + Overridden + Out of Service</option>
+      </options>
+    </state>
+    <config-description-ref uri="thing-type:co7io-bacnet:device-read-only"></config-description-ref>
+  </channel-type>
+
   <channel-type id="deviceWriteableDateTime">
     <item-type>DateTime</item-type>
     <label>Present value</label>
