@@ -37,4 +37,10 @@ public class DeviceConfig extends BACnetConfig {
   public String updateMode = "polling-cov";
   public int covLifetime = 300;
 
+  /** Periodic BACnet Device Object_Name health check interval in seconds; zero disables checks. */
+  public int healthCheckInterval = 30;
+
+  /** Number of consecutive failed health checks required before the Thing is marked offline. */
+  public int healthCheckFailureThreshold = 2;
+
 }
