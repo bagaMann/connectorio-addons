@@ -26,7 +26,7 @@
   xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
 
   <!-- Device is a bridge for remaining properties (inputs/outputs) -->
-  <bridge-type id="ip-device" extensible="deviceWriteableBoolean,deviceWriteableBinary,deviceReadableBinary,deviceWriteableNumber,deviceReadableNumber,deviceWriteableDateTime,deviceReadableDateTime,deviceWriteableText,deviceReadableText,deviceWriteableCalendar,deviceWriteableWeekSchedule">
+  <bridge-type id="ip-device" extensible="deviceWriteableBoolean,deviceWriteableBinary,deviceReadableBinary,deviceWriteableNumber,deviceReadableNumber,deviceWriteableDateTime,deviceReadableDateTime,deviceWriteableText,deviceReadableText,deviceReadableStatusFlags,deviceWriteableCalendar,deviceWriteableWeekSchedule">
     <supported-bridge-type-refs>
       <bridge-type-ref id="ipv4"/>
     </supported-bridge-type-refs>
@@ -120,7 +120,7 @@
     </config-description>
   </bridge-type>
 
-  <bridge-type id="mstp-device" extensible="deviceWriteableBoolean,deviceWriteableBinary,deviceReadableBinary,deviceWriteableNumber,deviceReadableNumber,deviceWriteableDateTime,deviceReadableDateTime,deviceWriteableText,deviceReadableText,deviceWriteableCalendar,deviceWriteableWeekSchedule">
+  <bridge-type id="mstp-device" extensible="deviceWriteableBoolean,deviceWriteableBinary,deviceReadableBinary,deviceWriteableNumber,deviceReadableNumber,deviceWriteableDateTime,deviceReadableDateTime,deviceWriteableText,deviceReadableText,deviceReadableStatusFlags,deviceWriteableCalendar,deviceWriteableWeekSchedule">
     <supported-bridge-type-refs>
       <bridge-type-ref id="mstp"/>
       <!-- enable support for mstp devices behind bacnet router -->
