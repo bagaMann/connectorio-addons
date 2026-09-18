@@ -120,6 +120,7 @@
         <option value="reliability">Reliability</option>
         <option value="out-of-service">Out of service</option>
         <option value="event-state">Event State</option>
+        <option value="status-flags">Status flags</option>
         <option value="weekly-schedule">Weekly schedule (only schedules)</option>
         <option value="exception-schedule">Exception schedule (only schedules)</option>
       </options>
@@ -193,6 +194,7 @@
         <option value="reliability">Reliability</option>
         <option value="out-of-service">Out of service</option>
         <option value="event-state">Event State</option>
+        <option value="status-flags">Status flags</option>
         <option value="weekly-schedule">Weekly schedule (only schedules)</option>
         <option value="exception-schedule">Exception schedule (only schedules)</option>
       </options>
