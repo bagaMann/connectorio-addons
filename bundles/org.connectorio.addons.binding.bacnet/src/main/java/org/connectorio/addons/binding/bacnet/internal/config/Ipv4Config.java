@@ -32,4 +32,16 @@ public class Ipv4Config extends BACnetConfig {
 
   public List<String> networkRouter;
 
+  /** disabled, bbmd, or foreign. */
+  public String bbmdMode = "disabled";
+
+  /** Remote BBMD peers in IP, IP:PORT, or IP:PORT@MASK form. */
+  public List<String> bbmdPeers;
+
+  /** BBMD used when this bridge operates as a BACnet foreign device. */
+  public String foreignBbmdServer;
+
+  /** Foreign Device Table registration lifetime in seconds. */
+  public int foreignDeviceTtl = 600;
+
 }
