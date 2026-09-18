@@ -52,6 +52,7 @@ import org.connectorio.addons.binding.bacnet.internal.handler.BACnetObjectBridge
 import org.connectorio.addons.binding.bacnet.internal.handler.channel.converter.CompositeConverter;
 import org.connectorio.addons.binding.bacnet.internal.handler.network.BACnetNetworkBridgeHandler;
 import org.connectorio.addons.binding.bacnet.internal.handler.source.BACnetCovManager;
+import org.connectorio.addons.binding.bacnet.internal.handler.source.BACnetDeviceHealthMonitor;
 import org.connectorio.addons.binding.bacnet.internal.handler.source.BACnetObjectsSampler;
 import org.connectorio.addons.binding.bacnet.internal.handler.source.BACnetPropertySampler;
 import org.connectorio.addons.binding.bacnet.internal.handler.source.BACnetSamplerComposer;
@@ -100,6 +101,7 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
   private Watchdog watchdog;
   private SamplingSource<BACnetPropertySampler> source;
   private BACnetCovManager covManager;
+  private BACnetDeviceHealthMonitor healthMonitor;
 
   public BACnetDeviceHandler(Bridge bridge, LinkManager linkManager, SourceFactory sourceFactory, WatchdogManager watchdogManager) {
     super(bridge);
@@ -155,6 +157,7 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
     source.start();
     linkManager.registerListener(thing, this);
     updateStatus(ThingStatus.ONLINE);
+    startHealthMonitor(client, deviceConfig);
     clientFuture.complete(client);
   }
 
@@ -166,6 +169,10 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
       covManager.close();
       covManager = null;
     }
+    if (healthMonitor != null) {
+      healthMonitor.close();
+      healthMonitor = null;
+    }
     if (watchdog != null) {
       watchdog.close();
     }
@@ -173,6 +180,33 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
       source.stop();
     }
     super.dispose();
+  }
+
+  private void startHealthMonitor(BacNetClient client, DeviceConfig config) {
+    if (healthMonitor != null) {
+      healthMonitor.close();
+      healthMonitor = null;
+    }
+
+    if (config.healthCheckInterval <= 0) {
+      logger.debug("BACnet health check disabled for {}", device);
+      return;
+    }
+
+    int failureThreshold = config.healthCheckFailureThreshold > 0 ? config.healthCheckFailureThreshold : 2;
+    healthMonitor = new BACnetDeviceHealthMonitor(
+      client,
+      device,
+      scheduler,
+      config.healthCheckInterval,
+      failureThreshold,
+      () -> updateStatus(ThingStatus.ONLINE),
+      () -> updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
+        "BACnet device did not respond to health checks")
+    );
+    healthMonitor.start();
+    logger.debug("BACnet health check started for {} interval={}s failureThreshold={}",
+      device, config.healthCheckInterval, failureThreshold);
   }
 
   private void updateChannels(BacNetClient client) {
