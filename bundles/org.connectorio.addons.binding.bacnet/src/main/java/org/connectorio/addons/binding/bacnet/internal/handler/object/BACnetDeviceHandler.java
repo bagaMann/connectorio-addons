@@ -591,5 +591,6 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
     if (flags.isFault()) mask |= 2;
     if (flags.isOverridden()) mask |= 4;
     if (flags.isOutOfService()) mask |= 8;
+    logger.debug("Status_Flags update for channel {} flags={} mask={}", channel.getUID(), flags, mask);
     getCallback().stateUpdated(channel.getUID(), new DecimalType(Integer.toString(mask)));
   }}
