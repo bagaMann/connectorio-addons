@@ -109,6 +109,26 @@
         <default>true</default>
       </parameter>
       <parameter name="discoverObjects" type="boolean" groupName="discovery" required="false">
+      <parameter name="discoverPresentValue" type="boolean" groupName="discovery" required="false">
+        <label>Discover Present Value</label>
+        <description>Automatically create Present_Value channels for discovered BACnet objects.</description>
+        <default>true</default>
+      </parameter>
+      <parameter name="discoverStatusFlags" type="boolean" groupName="discovery" required="false">
+        <label>Discover Status Flags</label>
+        <description>Automatically create Status_Flags channels for discovered BACnet objects.</description>
+        <default>true</default>
+      </parameter>
+      <parameter name="discoverEventState" type="boolean" groupName="discovery" required="false">
+        <label>Discover Event State</label>
+        <description>Automatically create Event_State channels for discovered BACnet objects.</description>
+        <default>false</default>
+      </parameter>
+      <parameter name="discoverOutOfService" type="boolean" groupName="discovery" required="false">
+        <label>Discover Out Of Service</label>
+        <description>Automatically create Out_Of_Service channels for discovered BACnet objects.</description>
+        <default>false</default>
+      </parameter>
         <label>Discover objects</label>
         <description>
           Enabling this feature will look for BACnet objects which can be mapped to Thing instances.
@@ -197,6 +217,26 @@
         <default>true</default>
       </parameter>
       <parameter name="discoverObjects" type="boolean" groupName="discovery" required="false">
+      <parameter name="discoverPresentValue" type="boolean" groupName="discovery" required="false">
+        <label>Discover Present Value</label>
+        <description>Automatically create Present_Value channels for discovered BACnet objects.</description>
+        <default>true</default>
+      </parameter>
+      <parameter name="discoverStatusFlags" type="boolean" groupName="discovery" required="false">
+        <label>Discover Status Flags</label>
+        <description>Automatically create Status_Flags channels for discovered BACnet objects.</description>
+        <default>true</default>
+      </parameter>
+      <parameter name="discoverEventState" type="boolean" groupName="discovery" required="false">
+        <label>Discover Event State</label>
+        <description>Automatically create Event_State channels for discovered BACnet objects.</description>
+        <default>false</default>
+      </parameter>
+      <parameter name="discoverOutOfService" type="boolean" groupName="discovery" required="false">
+        <label>Discover Out Of Service</label>
+        <description>Automatically create Out_Of_Service channels for discovered BACnet objects.</description>
+        <default>false</default>
+      </parameter>
         <label>Discover objects</label>
         <description>
           Enabling this feature will look for BACnet objects which can be mapped to Thing instances.
