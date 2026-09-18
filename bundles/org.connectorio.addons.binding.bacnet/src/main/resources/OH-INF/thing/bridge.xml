@@ -60,28 +60,6 @@
         <unitLabel>s</unitLabel>
         <default>300</default>
       </parameter>
-      <parameter-group name="cov">
-        <label>Change of Value</label>
-        <description>BACnet COV settings for device channels.</description>
-      </parameter-group>
-
-      <parameter name="updateMode" type="text" groupName="cov" required="false">
-        <label>Update mode</label>
-        <description>Select polling, BACnet COV, or both.</description>
-        <options>
-          <option value="polling">Polling only</option>
-          <option value="cov">COV only</option>
-          <option value="polling-cov">Polling + COV</option>
-        </options>
-        <default>polling-cov</default>
-      </parameter>
-      <parameter name="covLifetime" type="integer" groupName="cov" required="false" min="30">
-        <label>COV subscription lifetime</label>
-        <description>Requested lifetime in seconds. Subscriptions are renewed automatically at 80 percent.</description>
-        <unitLabel>s</unitLabel>
-        <default>300</default>
-      </parameter>
-
       <parameter name="address" type="text" required="true">
         <context>network-address</context>
         <label>Device IP Address</label>
@@ -157,6 +135,27 @@
         <label>Discovery</label>
         <description>Configuration of discovery mechanism which bring known identifiable BACnet elements into system.</description>
       </parameter-group>
+      <parameter-group name="cov">
+        <label>Change of Value</label>
+        <description>BACnet COV settings for device channels.</description>
+      </parameter-group>
+
+      <parameter name="updateMode" type="text" groupName="cov" required="false">
+        <label>Update mode</label>
+        <description>Select polling, BACnet COV, or both.</description>
+        <options>
+          <option value="polling">Polling only</option>
+          <option value="cov">COV only</option>
+          <option value="polling-cov">Polling + COV</option>
+        </options>
+        <default>polling-cov</default>
+      </parameter>
+      <parameter name="covLifetime" type="integer" groupName="cov" required="false" min="30">
+        <label>COV subscription lifetime</label>
+        <description>Requested lifetime in seconds. Subscriptions are renewed automatically at 80 percent.</description>
+        <unitLabel>s</unitLabel>
+        <default>300</default>
+      </parameter>
 
       <parameter name="address" type="integer" required="true">
         <label>Device address (node id)</label>
