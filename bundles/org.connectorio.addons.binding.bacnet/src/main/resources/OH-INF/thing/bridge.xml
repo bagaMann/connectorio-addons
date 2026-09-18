@@ -43,6 +43,10 @@
         <label>Change of Value</label>
         <description>BACnet COV settings for device channels.</description>
       </parameter-group>
+      <parameter-group name="health">
+        <label>Communication health</label>
+        <description>Periodic BACnet device availability checks.</description>
+      </parameter-group>
 
       <parameter name="updateMode" type="text" groupName="cov" required="false">
         <label>Update mode</label>
@@ -59,6 +63,17 @@
         <description>Requested lifetime in seconds. Subscriptions are renewed automatically at 80 percent.</description>
         <unitLabel>s</unitLabel>
         <default>300</default>
+      </parameter>
+      <parameter name="healthCheckInterval" type="integer" groupName="health" required="false" min="0">
+        <label>Health check interval</label>
+        <description>Interval in seconds between BACnet Device Object_Name checks. Set to 0 to disable health checks.</description>
+        <unitLabel>s</unitLabel>
+        <default>30</default>
+      </parameter>
+      <parameter name="healthCheckFailureThreshold" type="integer" groupName="health" required="false" min="1" max="10">
+        <label>Health check failure threshold</label>
+        <description>Number of consecutive failed health checks required before the Thing is marked OFFLINE.</description>
+        <default>2</default>
       </parameter>
       <parameter name="address" type="text" required="true">
         <context>network-address</context>
@@ -159,6 +174,10 @@
         <label>Change of Value</label>
         <description>BACnet COV settings for device channels.</description>
       </parameter-group>
+      <parameter-group name="health">
+        <label>Communication health</label>
+        <description>Periodic BACnet device availability checks.</description>
+      </parameter-group>
 
       <parameter name="updateMode" type="text" groupName="cov" required="false">
         <label>Update mode</label>
@@ -175,6 +194,17 @@
         <description>Requested lifetime in seconds. Subscriptions are renewed automatically at 80 percent.</description>
         <unitLabel>s</unitLabel>
         <default>300</default>
+      </parameter>
+      <parameter name="healthCheckInterval" type="integer" groupName="health" required="false" min="0">
+        <label>Health check interval</label>
+        <description>Interval in seconds between BACnet Device Object_Name checks. Set to 0 to disable health checks.</description>
+        <unitLabel>s</unitLabel>
+        <default>30</default>
+      </parameter>
+      <parameter name="healthCheckFailureThreshold" type="integer" groupName="health" required="false" min="1" max="10">
+        <label>Health check failure threshold</label>
+        <description>Number of consecutive failed health checks required before the Thing is marked OFFLINE.</description>
+        <default>2</default>
       </parameter>
 
       <parameter name="address" type="integer" required="true">
