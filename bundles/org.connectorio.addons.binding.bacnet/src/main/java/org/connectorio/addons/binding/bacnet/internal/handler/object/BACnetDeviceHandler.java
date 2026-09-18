@@ -415,7 +415,7 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
 
   @Override
   public void handleCommand(ChannelUID channelUID, Command command) {
-    logger.debug("Handle command {} for channel {} and property {}", command, channelUID, object);
+    logger.debug("Handle command {} for channel {}", command, channelUID);
 
     if (!getBridgeHandler().isPresent()) {
       logger.error("Handler is not attached to an bridge or bridge initialization failed!");
@@ -577,7 +577,7 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
       return;
     }
     boolean state = ((com.serotonin.bacnet4j.type.primitive.Boolean) value).booleanValue();
-    getCallback().stateUpdated(channel.getUID(), org.openhab.core.library.types.OnOffType.of(state));
+    getCallback().stateUpdated(channel.getUID(), state ? org.openhab.core.library.types.OnOffType.ON : org.openhab.core.library.types.OnOffType.OFF);
   }
 
   private void updateStatusFlags(Channel channel, Encodable value) {
