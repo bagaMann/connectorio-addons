@@ -26,7 +26,7 @@
   xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
 
   <!-- Device is a bridge for remaining properties (inputs/outputs) -->
-  <bridge-type id="ip-device" extensible="deviceWriteableBoolean,deviceWriteableBinary,deviceReadableBinary,deviceWriteableNumber,deviceReadableNumber,deviceWriteableDateTime,deviceReadableDateTime,deviceWriteableText,deviceReadableText,deviceReadableStatusFlags,deviceWriteableCalendar,deviceWriteableWeekSchedule">
+  <bridge-type id="ip-device" extensible="deviceWriteableBoolean,deviceWriteableBinary,deviceReadableBinary,deviceWriteableNumber,deviceReadableNumber,deviceWriteableDateTime,deviceReadableDateTime,deviceWriteableText,deviceReadableText,deviceReadableStatusFlags,deviceReadableEventState,deviceReadableOutOfService,deviceWriteableCalendar,deviceWriteableWeekSchedule">
     <supported-bridge-type-refs>
       <bridge-type-ref id="ipv4"/>
     </supported-bridge-type-refs>
@@ -109,6 +109,14 @@
         <default>true</default>
       </parameter>
       <parameter name="discoverObjects" type="boolean" groupName="discovery" required="false">
+        <label>Discover objects</label>
+        <description>
+          Enabling this feature will look for BACnet objects which can be mapped to Thing instances.
+          For each supported BACnet object there will be one Thing instance.
+          Please be aware that it most of the situations it will lead to multiplication of things.
+        </description>
+        <default>false</default>
+      </parameter>
       <parameter name="discoverPresentValue" type="boolean" groupName="discovery" required="false">
         <label>Discover Present Value</label>
         <description>Automatically create Present_Value channels for discovered BACnet objects.</description>
@@ -140,7 +148,7 @@
     </config-description>
   </bridge-type>
 
-  <bridge-type id="mstp-device" extensible="deviceWriteableBoolean,deviceWriteableBinary,deviceReadableBinary,deviceWriteableNumber,deviceReadableNumber,deviceWriteableDateTime,deviceReadableDateTime,deviceWriteableText,deviceReadableText,deviceReadableStatusFlags,deviceWriteableCalendar,deviceWriteableWeekSchedule">
+  <bridge-type id="mstp-device" extensible="deviceWriteableBoolean,deviceWriteableBinary,deviceReadableBinary,deviceWriteableNumber,deviceReadableNumber,deviceWriteableDateTime,deviceReadableDateTime,deviceWriteableText,deviceReadableText,deviceReadableStatusFlags,deviceReadableEventState,deviceReadableOutOfService,deviceWriteableCalendar,deviceWriteableWeekSchedule">
     <supported-bridge-type-refs>
       <bridge-type-ref id="mstp"/>
       <!-- enable support for mstp devices behind bacnet router -->
@@ -217,6 +225,14 @@
         <default>true</default>
       </parameter>
       <parameter name="discoverObjects" type="boolean" groupName="discovery" required="false">
+        <label>Discover objects</label>
+        <description>
+          Enabling this feature will look for BACnet objects which can be mapped to Thing instances.
+          For each supported BACnet object there will be one Thing instance.
+          Please be aware that it most of the situations it will lead to multiplication of things.
+        </description>
+        <default>false</default>
+      </parameter>
       <parameter name="discoverPresentValue" type="boolean" groupName="discovery" required="false">
         <label>Discover Present Value</label>
         <description>Automatically create Present_Value channels for discovered BACnet objects.</description>
