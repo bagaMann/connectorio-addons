@@ -21,8 +21,6 @@
  */
 package org.connectorio.addons.binding.bacnet.internal.handler.object;
 
-import static com.serotonin.bacnet4j.type.enumerated.ErrorClass.object;
-
 import com.serotonin.bacnet4j.obj.DeviceObject;
 import com.serotonin.bacnet4j.type.Encodable;
 import com.serotonin.bacnet4j.type.constructed.StatusFlags;
@@ -579,7 +577,7 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
       return;
     }
     boolean state = ((com.serotonin.bacnet4j.type.primitive.Boolean) value).booleanValue();
-    getCallback().stateUpdated(channel.getUID(), new org.openhab.core.library.types.OnOffType(state));
+    getCallback().stateUpdated(channel.getUID(), org.openhab.core.library.types.OnOffType.of(state));
   }
 
   private void updateStatusFlags(Channel channel, Encodable value) {
