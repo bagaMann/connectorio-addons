@@ -33,15 +33,23 @@ public final class BACnetCovSubscription implements AutoCloseable {
   private final boolean confirmed;
   private final Consumer<Encodable> callback;
   private final Consumer<Encodable> statusFlagsCallback;
+  private final Consumer<Encodable> eventStateCallback;
+  private final Consumer<Encodable> outOfServiceCallback;
   private final AtomicReference<CovSubscription> subscription = new AtomicReference<>();
 
   public BACnetCovSubscription(BacNetClient client, BacNetObject object, int lifetime, boolean confirmed,
       Consumer<Encodable> callback) {
-    this(client, object, lifetime, confirmed, callback, statusFlags -> { });
+    this(client, object, lifetime, confirmed, callback, statusFlags -> { }, eventState -> { }, outOfService -> { });
   }
 
   public BACnetCovSubscription(BacNetClient client, BacNetObject object, int lifetime, boolean confirmed,
       Consumer<Encodable> callback, Consumer<Encodable> statusFlagsCallback) {
+    this(client, object, lifetime, confirmed, callback, statusFlagsCallback, eventState -> { }, outOfService -> { });
+  }
+
+  public BACnetCovSubscription(BacNetClient client, BacNetObject object, int lifetime, boolean confirmed,
+      Consumer<Encodable> callback, Consumer<Encodable> statusFlagsCallback,
+      Consumer<Encodable> eventStateCallback, Consumer<Encodable> outOfServiceCallback) {
     this.client = Objects.requireNonNull(client, "client");
     this.object = Objects.requireNonNull(object, "object");
     if (lifetime <= 0) {
@@ -51,6 +59,8 @@ public final class BACnetCovSubscription implements AutoCloseable {
     this.confirmed = confirmed;
     this.callback = Objects.requireNonNull(callback, "callback");
     this.statusFlagsCallback = Objects.requireNonNull(statusFlagsCallback, "statusFlagsCallback");
+    this.eventStateCallback = Objects.requireNonNull(eventStateCallback, "eventStateCallback");
+    this.outOfServiceCallback = Objects.requireNonNull(outOfServiceCallback, "outOfServiceCallback");
   }
 
   /** Start the subscription once. */
@@ -69,6 +79,16 @@ public final class BACnetCovSubscription implements AutoCloseable {
       @Override
       public void onCovStatusFlags(BacNetObject source, Encodable statusFlags, long timeRemaining) {
         statusFlagsCallback.accept(statusFlags);
+      }
+
+      @Override
+      public void onCovEventState(BacNetObject source, Encodable eventState, long timeRemaining) {
+        eventStateCallback.accept(eventState);
+      }
+
+      @Override
+      public void onCovOutOfService(BacNetObject source, Encodable outOfService, long timeRemaining) {
+        outOfServiceCallback.accept(outOfService);
       }
     }));
   }
