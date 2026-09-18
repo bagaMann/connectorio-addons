@@ -67,7 +67,7 @@ import org.connectorio.addons.link.LinkManager;
 import org.connectorio.addons.temporal.item.TemporalItemFactory;
 import org.openhab.core.config.core.Configuration;
 import org.openhab.core.library.CoreItemFactory;
-import org.openhab.core.library.types.OnOffType;
+import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.Channel;
 import org.openhab.core.thing.ChannelUID;
@@ -182,10 +182,7 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
     for (BacNetObject object : client.getDeviceObjects(device)) {
       createChannel(builder, object, PropertyIdentifier.presentValue);
       if (supportsStatusFlags(object.getType())) {
-        createStatusFlagChannel(builder, object, "in-alarm", "In Alarm");
-        createStatusFlagChannel(builder, object, "fault", "Fault");
-        createStatusFlagChannel(builder, object, "overridden", "Overridden");
-        createStatusFlagChannel(builder, object, "out-of-service", "Out of Service");
+        createStatusFlagsChannel(builder, object);
       }
       if (Type.SCHEDULE.equals(object.getType())) {
         createChannel(builder, object, PropertyIdentifier.weeklySchedule);
@@ -214,22 +211,21 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
     }
   }
 
-  private void createStatusFlagChannel(BridgeBuilder builder, BacNetObject object, String flag, String label) {
-    String channelId = object.getType().name().toLowerCase() + "-" + object.getId() + "-status-flags-" + flag;
+  private void createStatusFlagsChannel(BridgeBuilder builder, BacNetObject object) {
+    String channelId = object.getType().name().toLowerCase() + "-" + object.getId() + "-status-flags";
     ChannelUID uid = new ChannelUID(thing.getUID(), channelId);
     Map<String, Object> properties = new LinkedHashMap<>();
     properties.put("instance", object.getId());
     properties.put("type", object.getType().name());
     properties.put("readOnly", true);
     properties.put("propertyIdentifier", PropertyIdentifier.statusFlags.toString());
-    properties.put("statusFlag", flag);
     properties.put("refreshInterval", 0);
     Channel channel = ChannelBuilder.create(uid)
-      .withType(new ChannelTypeUID(BACnetBindingConstants.BINDING_ID, "deviceReadableBinary"))
+      .withType(new ChannelTypeUID(BACnetBindingConstants.BINDING_ID, "deviceReadableStatusFlags"))
       .withConfiguration(new Configuration(properties))
-      .withLabel(object.getName() + " - " + label)
+      .withLabel(object.getName() + " - Status flags")
       .withDescription(object.getDescription())
-      .withAcceptedItemType(CoreItemFactory.SWITCH)
+      .withAcceptedItemType(CoreItemFactory.NUMBER)
       .build();
     builder.withChannel(channel);
   }
@@ -368,9 +364,9 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
     if (command == RefreshType.REFRESH) {
       if (source != null) {
         clientFuture.thenAccept(client -> {
-          if (config.statusFlag != null) {
+          if (PropertyIdentifier.statusFlags.toString().equals(attribute)) {
             source.request(new BACnetObjectsSampler(client, object, PropertyIdentifier.statusFlags.toString(),
-              value -> updateStatusFlag(channel, config.statusFlag, value)));
+              value -> updateStatusFlags(channel, value)));
           } else {
             source.request(new BACnetObjectsSampler(client, object, attribute, new SamplerCallback(
               CompositeConverter.INSTANCE, new ChannelCallback(getCallback(), channel))));
@@ -455,8 +451,8 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
       Long refreshInterval = Optional.ofNullable(config.refreshInterval).filter(value -> value != 0).orElse(getRefreshInterval());
       BacNetObject object = new BacNetObject(device, config.instance, config.type);
 
-      if (config.statusFlag != null) {
-        Consumer<Encodable> statusConsumer = value -> updateStatusFlag(channel, config.statusFlag, value);
+      if (PropertyIdentifier.statusFlags.toString().equals(config.propertyIdentifier)) {
+        Consumer<Encodable> statusConsumer = value -> updateStatusFlags(channel, value);
         if (pollingEnabled) {
           source.add(refreshInterval, channel.getUID().getAsString(),
             new BACnetObjectsSampler(client, object, PropertyIdentifier.statusFlags.toString(), statusConsumer));
@@ -478,22 +474,16 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
     if (covManager != null) covManager.start();
   }
 
-  private void updateStatusFlag(Channel channel, String flag, Encodable value) {
+  private void updateStatusFlags(Channel channel, Encodable value) {
     if (!(value instanceof StatusFlags)) {
       logger.warn("Expected StatusFlags for channel {}, got {}", channel.getUID(), value);
       return;
     }
     StatusFlags flags = (StatusFlags) value;
-    boolean active;
-    switch (flag) {
-      case "in-alarm": active = flags.isInAlarm(); break;
-      case "fault": active = flags.isFault(); break;
-      case "overridden": active = flags.isOverridden(); break;
-      case "out-of-service": active = flags.isOutOfService(); break;
-      default:
-        logger.warn("Unknown BACnet status flag {} for channel {}", flag, channel.getUID());
-        return;
-    }
-    getCallback().stateUpdated(channel.getUID(), active ? OnOffType.ON : OnOffType.OFF);
-  }
-}
+    int mask = 0;
+    if (flags.isInAlarm()) mask |= 1;
+    if (flags.isFault()) mask |= 2;
+    if (flags.isOverridden()) mask |= 4;
+    if (flags.isOutOfService()) mask |= 8;
+    getCallback().stateUpdated(channel.getUID(), new DecimalType(Integer.toString(mask)));
+  }}
