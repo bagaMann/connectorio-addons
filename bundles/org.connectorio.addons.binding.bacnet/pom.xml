@@ -47,6 +47,7 @@
 
   <properties>
     <documentation.reference>bacnet</documentation.reference>
+    <bacnet4j-wrapper.version>1.3.0-SNAPSHOT</bacnet4j-wrapper.version>
   </properties>
 
   <dependencies>
