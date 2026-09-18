@@ -46,11 +46,19 @@ public final class BACnetCovManager implements AutoCloseable {
 
   public synchronized void add(BacNetObject object, Consumer<Encodable> presentValueCallback,
       Consumer<Encodable> statusFlagsCallback) {
+    add(object, presentValueCallback, statusFlagsCallback, null, null);
+  }
+
+  public synchronized void add(BacNetObject object, Consumer<Encodable> presentValueCallback,
+      Consumer<Encodable> statusFlagsCallback, Consumer<Encodable> eventStateCallback,
+      Consumer<Encodable> outOfServiceCallback) {
     if (closed) return;
     String key = object.getType().name() + ":" + object.getId();
     Entry entry = entries.computeIfAbsent(key, ignored -> new Entry(object));
     if (presentValueCallback != null) entry.presentValueCallbacks.add(presentValueCallback);
     if (statusFlagsCallback != null) entry.statusFlagsCallbacks.add(statusFlagsCallback);
+    if (eventStateCallback != null) entry.eventStateCallbacks.add(eventStateCallback);
+    if (outOfServiceCallback != null) entry.outOfServiceCallbacks.add(outOfServiceCallback);
   }
 
   public synchronized void start() {
@@ -63,7 +71,9 @@ public final class BACnetCovManager implements AutoCloseable {
     try {
       entry.subscription = new BACnetCovSubscription(client, entry.object, lifetime, false,
         value -> dispatch(entry.presentValueCallbacks, value),
-        value -> dispatch(entry.statusFlagsCallbacks, value));
+        value -> dispatch(entry.statusFlagsCallbacks, value),
+        value -> dispatch(entry.eventStateCallbacks, value),
+        value -> dispatch(entry.outOfServiceCallbacks, value));
       entry.subscription.start();
       schedule(entry, renewalSeconds);
     } catch (RuntimeException e) {
@@ -124,6 +134,8 @@ public final class BACnetCovManager implements AutoCloseable {
     private final BacNetObject object;
     private final List<Consumer<Encodable>> presentValueCallbacks = new ArrayList<>();
     private final List<Consumer<Encodable>> statusFlagsCallbacks = new ArrayList<>();
+    private final List<Consumer<Encodable>> eventStateCallbacks = new ArrayList<>();
+    private final List<Consumer<Encodable>> outOfServiceCallbacks = new ArrayList<>();
     private BACnetCovSubscription subscription;
     private ScheduledFuture<?> task;
     private Entry(BacNetObject object) { this.object = object; }
