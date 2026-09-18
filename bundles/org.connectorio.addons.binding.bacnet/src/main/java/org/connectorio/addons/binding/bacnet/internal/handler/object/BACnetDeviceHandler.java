@@ -538,20 +538,16 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
 
       if (PropertyIdentifier.eventState.toString().equals(config.propertyIdentifier)) {
         Consumer<Encodable> eventConsumer = value -> updateEventState(channel, value);
-        if (pollingEnabled) {
-          source.add(refreshInterval, channel.getUID().getAsString(),
-            new BACnetObjectsSampler(client, object, PropertyIdentifier.eventState.toString(), eventConsumer));
-        }
+        source.add(refreshInterval, channel.getUID().getAsString(),
+          new BACnetObjectsSampler(client, object, PropertyIdentifier.eventState.toString(), eventConsumer));
         if (covManager != null) covManager.add(object, null, null, eventConsumer, null);
         continue;
       }
 
       if (PropertyIdentifier.outOfService.toString().equals(config.propertyIdentifier)) {
         Consumer<Encodable> outOfServiceConsumer = value -> updateOutOfService(channel, value);
-        if (pollingEnabled) {
-          source.add(refreshInterval, channel.getUID().getAsString(),
-            new BACnetObjectsSampler(client, object, PropertyIdentifier.outOfService.toString(), outOfServiceConsumer));
-        }
+        source.add(refreshInterval, channel.getUID().getAsString(),
+          new BACnetObjectsSampler(client, object, PropertyIdentifier.outOfService.toString(), outOfServiceConsumer));
         if (covManager != null) covManager.add(object, null, null, null, outOfServiceConsumer);
         continue;
       }
