@@ -75,6 +75,9 @@ public final class BACnetCovManager implements AutoCloseable {
         value -> dispatch(entry.eventStateCallbacks, value),
         value -> dispatch(entry.outOfServiceCallbacks, value));
       entry.subscription.start();
+      logger.debug("COV active for {} lifetime={}s callbacks[presentValue={}, statusFlags={}, eventState={}, outOfService={}]",
+        entry.object, lifetime, entry.presentValueCallbacks.size(), entry.statusFlagsCallbacks.size(),
+        entry.eventStateCallbacks.size(), entry.outOfServiceCallbacks.size());
       schedule(entry, renewalSeconds);
     } catch (RuntimeException e) {
       entry.subscription = null;
@@ -96,6 +99,7 @@ public final class BACnetCovManager implements AutoCloseable {
         return;
       }
       subscription.renew();
+      logger.debug("COV renewed for {} lifetime={}s", entry.object, lifetime);
       schedule(entry, renewalSeconds);
     } catch (RuntimeException e) {
       logger.warn("Unable to renew COV for {}; polling remains available and COV will be retried", entry.object, e);
