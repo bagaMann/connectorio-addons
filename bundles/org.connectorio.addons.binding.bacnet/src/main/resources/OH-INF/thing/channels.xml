@@ -186,6 +186,30 @@
     <config-description-ref uri="thing-type:co7io-bacnet:device-read-only"></config-description-ref>
   </channel-type>
 
+  <channel-type id="deviceReadableEventState">
+    <item-type>Number</item-type>
+    <label>Event state</label>
+    <description>BACnet Event_State enumeration: 0 Normal, 1 Fault, 2 Off Normal, 3 High Limit, 4 Low Limit, 5 Life Safety Alarm.</description>
+    <state>
+      <options>
+        <option value="0">Normal</option>
+        <option value="1">Fault</option>
+        <option value="2">Off Normal</option>
+        <option value="3">High Limit</option>
+        <option value="4">Low Limit</option>
+        <option value="5">Life Safety Alarm</option>
+      </options>
+    </state>
+    <config-description-ref uri="thing-type:co7io-bacnet:device-read-only"></config-description-ref>
+  </channel-type>
+
+  <channel-type id="deviceReadableOutOfService">
+    <item-type>Switch</item-type>
+    <label>Out of service</label>
+    <description>BACnet Out_Of_Service property.</description>
+    <config-description-ref uri="thing-type:co7io-bacnet:device-read-only"></config-description-ref>
+  </channel-type>
+
   <channel-type id="deviceWriteableDateTime">
     <item-type>DateTime</item-type>
     <label>Present value</label>
