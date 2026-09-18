@@ -18,6 +18,8 @@ import org.code_house.bacnet4j.wrapper.api.BacNetObject;
 import org.code_house.bacnet4j.wrapper.api.CovListener;
 import org.code_house.bacnet4j.wrapper.api.CovSubscription;
 import com.serotonin.bacnet4j.type.Encodable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Owns one BACnet COV subscription without changing the existing polling path.
@@ -26,6 +28,8 @@ import com.serotonin.bacnet4j.type.Encodable;
  * fallback polling and openHAB channel updates are handled by the binding layer.</p>
  */
 public final class BACnetCovSubscription implements AutoCloseable {
+
+  private static final Logger logger = LoggerFactory.getLogger(BACnetCovSubscription.class);
 
   private final BacNetClient client;
   private final BacNetObject object;
@@ -73,21 +77,25 @@ public final class BACnetCovSubscription implements AutoCloseable {
     subscription.set(client.subscribeCov(object, lifetime, confirmed, new CovListener() {
       @Override
       public void onCovNotification(BacNetObject source, Encodable presentValue, long timeRemaining) {
+        logger.debug("COV Present_Value {} value={} timeRemaining={}", source, presentValue, timeRemaining);
         callback.accept(presentValue);
       }
 
       @Override
       public void onCovStatusFlags(BacNetObject source, Encodable statusFlags, long timeRemaining) {
+        logger.debug("COV Status_Flags {} value={} timeRemaining={}", source, statusFlags, timeRemaining);
         statusFlagsCallback.accept(statusFlags);
       }
 
       @Override
       public void onCovEventState(BacNetObject source, Encodable eventState, long timeRemaining) {
+        logger.debug("COV Event_State {} value={} timeRemaining={}", source, eventState, timeRemaining);
         eventStateCallback.accept(eventState);
       }
 
       @Override
       public void onCovOutOfService(BacNetObject source, Encodable outOfService, long timeRemaining) {
+        logger.debug("COV Out_Of_Service {} value={} timeRemaining={}", source, outOfService, timeRemaining);
         outOfServiceCallback.accept(outOfService);
       }
     }));
