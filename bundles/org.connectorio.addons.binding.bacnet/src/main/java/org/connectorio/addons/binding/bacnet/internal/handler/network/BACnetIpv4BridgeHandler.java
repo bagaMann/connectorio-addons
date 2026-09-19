@@ -23,6 +23,7 @@ package org.connectorio.addons.binding.bacnet.internal.handler.network;
 
 import com.serotonin.bacnet4j.npdu.ip.IpNetworkBuilder;
 import com.serotonin.bacnet4j.transport.DefaultTransport;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -46,6 +47,7 @@ import org.openhab.core.types.Command;
 public class BACnetIpv4BridgeHandler extends BasePollingBridgeHandler<Ipv4Config> implements BACnetNetworkBridgeHandler<Ipv4Config> {
 
   private final Pattern ROUTER_PATTERN = Pattern.compile("^(?<network>\\d+)=(?<ip>\\d+\\.\\d+\\.\\d+\\.\\d+)(?::(?<port>\\d+))$");
+  private final Pattern BBMD_PATTERN = Pattern.compile("^(?<ip>\\d+\\.\\d+\\.\\d+\\.\\d+)(?::(?<port>\\d+))?$");
   private CompletableFuture<BacNetClient> clientFuture = new CompletableFuture<>();
   private BacNetClient client;
 
@@ -99,8 +101,48 @@ public class BACnetIpv4BridgeHandler extends BasePollingBridgeHandler<Ipv4Config
         }
       }
       cli.start();
+
+      Ipv4Config config = getBridgeConfig().orElse(null);
+      if (config != null && config.bbmdEnabled) {
+        try {
+          configureBbmd(cli, config);
+        } catch (RuntimeException e) {
+          cli.stop();
+          clientFuture.completeExceptionally(e);
+          return;
+        }
+      }
+
       clientFuture.complete(cli);
     });
+  }
+
+  private void configureBbmd(BacNetIpClient cli, Ipv4Config config) {
+    if (config.bbmdLocalAddress == null || config.bbmdLocalAddress.trim().isEmpty()) {
+      throw new IllegalArgumentException("BBMD local address must be configured when BBMD is enabled");
+    }
+
+    List<BacNetIpClient.BbmdEntry> peers = new ArrayList<>();
+    for (String value : Optional.ofNullable(config.bbmdPeers).orElse(Collections.emptyList())) {
+      if (value == null || value.trim().isEmpty()) {
+        continue;
+      }
+
+      Matcher matcher = BBMD_PATTERN.matcher(value.trim());
+      if (!matcher.matches()) {
+        throw new IllegalArgumentException("Invalid BBMD peer. Expected IP or IP:PORT: " + value);
+      }
+
+      String ip = matcher.group("ip");
+      int port = Optional.ofNullable(matcher.group("port"))
+        .filter(portText -> !portText.isEmpty())
+        .map(Integer::parseInt)
+        .orElse(47808);
+
+      peers.add(new BacNetIpClient.BbmdEntry(ip, port));
+    }
+
+    cli.enableBbmd(config.bbmdLocalAddress.trim(), config.port, peers);
   }
 
   @Override
