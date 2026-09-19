@@ -32,7 +32,13 @@ public class Ipv4Config extends BACnetConfig {
 
   public List<String> networkRouter;
 
-  /** Enable BBMD operation for this BACnet/IP bridge. */
+  /** BACnet/IP broadcast mode: disabled, bbmd, or foreign. */
+  public String broadcastMode = "disabled";
+
+  /**
+   * Legacy switch kept for compatibility with existing Things created before broadcastMode
+   * was introduced. Used only when broadcastMode is absent/blank.
+   */
   public boolean bbmdEnabled = false;
 
   /** IPv4 address by which this openHAB BBMD is reachable from remote subnets. */
@@ -40,5 +46,11 @@ public class Ipv4Config extends BACnetConfig {
 
   /** Remote BBMD peers in IP or IP:PORT form. */
   public List<String> bbmdPeers;
+
+  /** Remote BBMD used when this bridge operates as a BACnet Foreign Device. */
+  public String foreignBbmd;
+
+  /** Foreign Device registration TTL in seconds. */
+  public int foreignDeviceTtl = 600;
 
 }
