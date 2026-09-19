@@ -73,14 +73,21 @@ public class BACnetIpv4BridgeHandler extends BasePollingBridgeHandler<Ipv4Config
         .withLocalNetworkNumber(config.localNetworkNumber)
         .withReuseAddress(true);
 
-      // Preserve the stable wildcard bind unless BBMD is explicitly enabled.
-      // BACnet4J 6.1 opens a dedicated broadcast socket on Linux when a concrete
-      // bind address is used, so local BACnet broadcasts remain available.
-      if (config.bbmdEnabled) {
+      String broadcastMode = getBroadcastMode(config);
+
+      // Preserve the stable wildcard bind when BACnet broadcast routing is disabled.
+      // BBMD and Foreign Device modes use a concrete local address. BACnet4J 6.1
+      // opens a separate broadcast socket on Linux, preserving local BACnet discovery.
+      if ("bbmd".equals(broadcastMode)) {
         if (config.bbmdLocalAddress == null || config.bbmdLocalAddress.trim().isEmpty()) {
-          throw new IllegalArgumentException("BBMD local address must be configured when BBMD is enabled");
+          throw new IllegalArgumentException("BBMD local address must be configured when BBMD mode is enabled");
         }
         networkBuilder.withLocalBindAddress(config.bbmdLocalAddress.trim());
+      } else if ("foreign".equals(broadcastMode)) {
+        if (config.localBindAddress == null || config.localBindAddress.trim().isEmpty()) {
+          throw new IllegalArgumentException("Local address must be configured when Foreign Device mode is enabled");
+        }
+        networkBuilder.withLocalBindAddress(config.localBindAddress.trim());
       }
 
       return networkBuilder;
@@ -117,9 +124,14 @@ public class BACnetIpv4BridgeHandler extends BasePollingBridgeHandler<Ipv4Config
       cli.start();
 
       Ipv4Config config = getBridgeConfig().orElse(null);
-      if (config != null && config.bbmdEnabled) {
+      if (config != null) {
         try {
-          configureBbmd(cli, config);
+          String broadcastMode = getBroadcastMode(config);
+          if ("bbmd".equals(broadcastMode)) {
+            configureBbmd(cli, config);
+          } else if ("foreign".equals(broadcastMode)) {
+            configureForeignDevice(cli, config);
+          }
         } catch (RuntimeException e) {
           cli.stop();
           clientFuture.completeExceptionally(e);
@@ -129,6 +141,41 @@ public class BACnetIpv4BridgeHandler extends BasePollingBridgeHandler<Ipv4Config
 
       clientFuture.complete(cli);
     });
+  }
+
+  private String getBroadcastMode(Ipv4Config config) {
+    String mode = config.broadcastMode;
+    if (mode == null || mode.trim().isEmpty()) {
+      return config.bbmdEnabled ? "bbmd" : "disabled";
+    }
+
+    mode = mode.trim().toLowerCase();
+    if (!"disabled".equals(mode) && !"bbmd".equals(mode) && !"foreign".equals(mode)) {
+      throw new IllegalArgumentException("Unsupported BACnet/IP broadcast mode: " + config.broadcastMode);
+    }
+    return mode;
+  }
+
+  private void configureForeignDevice(BacNetIpClient cli, Ipv4Config config) {
+    if (config.foreignBbmd == null || config.foreignBbmd.trim().isEmpty()) {
+      throw new IllegalArgumentException("Foreign BBMD must be configured when Foreign Device mode is enabled");
+    }
+
+    Matcher matcher = BBMD_PATTERN.matcher(config.foreignBbmd.trim());
+    if (!matcher.matches()) {
+      throw new IllegalArgumentException("Invalid Foreign BBMD. Expected IP or IP:PORT: " + config.foreignBbmd);
+    }
+
+    String ip = matcher.group("ip");
+    int port = Optional.ofNullable(matcher.group("port"))
+      .filter(portText -> !portText.isEmpty())
+      .map(Integer::parseInt)
+      .orElse(47808);
+
+    int ttl = config.foreignDeviceTtl > 0 ? config.foreignDeviceTtl : 600;
+    cli.registerAsForeignDevice(ip, port, ttl);
+    logger.info("BACnet/IP Foreign Device registered local={}:{} bbmd={}:{} ttl={}s",
+      config.localBindAddress.trim(), config.port, ip, port, ttl);
   }
 
   private void configureBbmd(BacNetIpClient cli, Ipv4Config config) {
