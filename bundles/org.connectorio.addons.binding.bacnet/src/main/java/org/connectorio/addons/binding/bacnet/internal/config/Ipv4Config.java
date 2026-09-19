@@ -33,7 +33,7 @@ public class Ipv4Config extends BACnetConfig {
   public List<String> networkRouter;
 
   /** BACnet/IP broadcast mode: disabled, bbmd, or foreign. */
-  public String broadcastMode = "disabled";
+  public String broadcastMode;
 
   /**
    * Legacy switch kept for compatibility with existing Things created before broadcastMode
