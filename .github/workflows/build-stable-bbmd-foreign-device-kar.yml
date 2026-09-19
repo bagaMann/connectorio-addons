@@ -1,0 +1,84 @@
+name: Build stable BACnet KAR with BBMD and Foreign Device
+
+on:
+  push:
+    branches:
+      - build/stable-bbmd-foreign-device-2026-09-19
+  workflow_dispatch:
+
+jobs:
+  build-kar:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout ConnectorIO stable build branch
+        uses: actions/checkout@v4
+        with:
+          path: connectorio-addons
+
+      - name: Checkout BACnet4J wrapper stable branch
+        uses: actions/checkout@v4
+        with:
+          repository: bagaMann/bacnet4j-wrapper
+          ref: stable/bbmd-foreign-device-2026-09-19
+          path: bacnet4j-wrapper
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Install stable BACnet4J wrapper
+        working-directory: bacnet4j-wrapper
+        run: |
+          mvn -U -pl api,ip,mstp -am install -DskipTests
+
+      - name: Build stable BACnet KAR
+        working-directory: connectorio-addons
+        run: |
+          mvn -U -Popenhab \
+            -pl kars/org.connectorio.addons.kar.bacnet \
+            -am package -DskipTests
+
+      - name: Collect KAR and checksum
+        working-directory: connectorio-addons
+        run: |
+          mkdir -p artifacts
+          cp kars/org.connectorio.addons.kar.bacnet/target/*.kar artifacts/
+          cd artifacts
+          sha256sum *.kar > SHA256SUMS.txt
+          ls -lh
+          cat SHA256SUMS.txt
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bacnet-kar-stable-bbmd-foreign-device-2026-09-19
+          path: |
+            connectorio-addons/artifacts/*.kar
+            connectorio-addons/artifacts/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Publish permanent GitHub release
+        working-directory: connectorio-addons
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: bacnet-stable-bbmd-foreign-device-2026-09-19
+          RELEASE_SHA: f1e84b1921d6e1c80b3d7c16ec08d31bc1878801
+        run: |
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" artifacts/*.kar artifacts/SHA256SUMS.txt \
+              --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$RELEASE_TAG" artifacts/*.kar artifacts/SHA256SUMS.txt \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$RELEASE_SHA" \
+              --title "BACnet stable: COV + health + BBMD + Foreign Device (2026-09-19)" \
+              --notes "Verified test baseline. ConnectorIO: stable/bbmd-foreign-device-2026-09-19 at f1e84b1921d6e1c80b3d7c16ec08d31bc1878801. bacnet4j-wrapper: stable/bbmd-foreign-device-2026-09-19 at 4afe087401b2237f77d79718730997c99bd907c7. Includes BACnet4J 6.1.0-beta.2, COV Present_Value, COV Status_Flags, COV renewal, health monitoring, BBMD mode, Foreign Device registration, discovery through remote BBMD, and automatic child-device reinitialization after IPv4 bridge configuration changes."
+          fi
