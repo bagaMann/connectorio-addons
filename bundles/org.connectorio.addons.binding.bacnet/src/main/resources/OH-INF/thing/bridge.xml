@@ -291,10 +291,6 @@
         <label>IP settings</label>
         <description>Settings related to IP network.</description>
       </parameter-group>
-      <parameter-group name="bbmd">
-        <label>BBMD / Foreign Device</label>
-        <description>Configuration of BACnet/IP broadcast distribution between IP subnets.</description>
-      </parameter-group>
 
       <parameter name="localNetworkNumber" type="integer" required="true" groupName="network">
         <description>Identifier of network to which by default this bridge is bound.</description>
@@ -307,7 +303,7 @@
         <default>1339</default>
       </parameter>
       <parameter name="localBindAddress" type="text" required="false" groupName="ip">
-        <description>IP address on which communications to system are expected to take place. A concrete address is required when BBMD mode is enabled.</description>
+        <description>IP address on which communications to system are expected to take place.</description>
         <label>Local address</label>
       </parameter>
       <parameter name="port" type="integer" required="true" groupName="ip">
@@ -318,41 +314,6 @@
       <parameter name="broadcastAddress" type="text" required="true" groupName="ip">
         <description>Address used for sending BACnet broadcast messages.</description>
         <label>Broadcast address</label>
-      </parameter>
-
-      <parameter name="bbmdMode" type="text" required="false" groupName="bbmd">
-        <label>BBMD mode</label>
-        <description>Select whether this BACnet/IP bridge uses BBMD functionality.</description>
-        <options>
-          <option value="disabled">Disabled</option>
-          <option value="bbmd">BBMD</option>
-          <option value="foreign">Foreign Device</option>
-        </options>
-        <default>disabled</default>
-      </parameter>
-
-      <parameter name="bbmdPeers" type="text" required="false" multiple="true" groupName="bbmd">
-        <label>BBMD peers</label>
-        <description>
-          Remote BBMD entries used to build the Broadcast Distribution Table.
-          Add one BBMD per row. Supported formats: IP, IP:PORT, or IP:PORT@MASK.
-          Port defaults to 47808 and distribution mask defaults to 255.255.255.255.
-        </description>
-      </parameter>
-
-      <parameter name="foreignBbmdServer" type="text" required="false" groupName="bbmd">
-        <label>Foreign Device BBMD server</label>
-        <description>
-          BBMD used when this bridge operates as a Foreign Device.
-          Supported formats: IP or IP:PORT. Port defaults to 47808.
-        </description>
-      </parameter>
-
-      <parameter name="foreignDeviceTtl" type="integer" required="false" groupName="bbmd" min="30" max="65535">
-        <label>Foreign Device TTL</label>
-        <description>Foreign Device registration lifetime. BACnet4J renews the registration automatically.</description>
-        <unitLabel>s</unitLabel>
-        <default>600</default>
       </parameter>
 
       <parameter name="refreshInterval" type="integer" groupName="basic" required="false">
