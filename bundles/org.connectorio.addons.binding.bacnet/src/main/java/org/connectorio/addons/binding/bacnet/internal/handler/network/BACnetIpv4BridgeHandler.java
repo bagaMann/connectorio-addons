@@ -43,8 +43,12 @@ import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.ThingStatusDetail;
 import org.openhab.core.thing.binding.ThingHandlerService;
 import org.openhab.core.types.Command;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BACnetIpv4BridgeHandler extends BasePollingBridgeHandler<Ipv4Config> implements BACnetNetworkBridgeHandler<Ipv4Config> {
+
+  private final Logger logger = LoggerFactory.getLogger(getClass());
 
   private final Pattern ROUTER_PATTERN = Pattern.compile("^(?<network>\\d+)=(?<ip>\\d+\\.\\d+\\.\\d+\\.\\d+)(?::(?<port>\\d+))$");
   private final Pattern BBMD_PATTERN = Pattern.compile("^(?<ip>\\d+\\.\\d+\\.\\d+\\.\\d+)(?::(?<port>\\d+))?$");
@@ -63,13 +67,23 @@ public class BACnetIpv4BridgeHandler extends BasePollingBridgeHandler<Ipv4Config
   @Override
   public void initialize() {
     IpNetworkBuilder builder = getBridgeConfig().map(config -> {
-      return new IpNetworkBuilder()
+      IpNetworkBuilder networkBuilder = new IpNetworkBuilder()
         .withBroadcast(config.broadcastAddress, 24)
-        //.withLocalBindAddress(config.localBindAddress)
         .withPort(config.port)
         .withLocalNetworkNumber(config.localNetworkNumber)
-        .withReuseAddress(true)
-        ;
+        .withReuseAddress(true);
+
+      // Preserve the stable wildcard bind unless BBMD is explicitly enabled.
+      // BACnet4J 6.1 opens a dedicated broadcast socket on Linux when a concrete
+      // bind address is used, so local BACnet broadcasts remain available.
+      if (config.bbmdEnabled) {
+        if (config.bbmdLocalAddress == null || config.bbmdLocalAddress.trim().isEmpty()) {
+          throw new IllegalArgumentException("BBMD local address must be configured when BBMD is enabled");
+        }
+        networkBuilder.withLocalBindAddress(config.bbmdLocalAddress.trim());
+      }
+
+      return networkBuilder;
     }).orElse(new IpNetworkBuilder());
 
     clientFuture.handleAsync((c, e) -> {
@@ -143,6 +157,8 @@ public class BACnetIpv4BridgeHandler extends BasePollingBridgeHandler<Ipv4Config
     }
 
     cli.enableBbmd(config.bbmdLocalAddress.trim(), config.port, peers);
+    logger.info("BACnet/IP BBMD enabled local={}:{} peers={}",
+      config.bbmdLocalAddress.trim(), config.port, peers.size());
   }
 
   @Override
