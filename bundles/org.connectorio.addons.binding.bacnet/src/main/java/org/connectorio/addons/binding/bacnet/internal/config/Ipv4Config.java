@@ -32,4 +32,13 @@ public class Ipv4Config extends BACnetConfig {
 
   public List<String> networkRouter;
 
+  /** Enable BBMD operation for this BACnet/IP bridge. */
+  public boolean bbmdEnabled = false;
+
+  /** IPv4 address by which this openHAB BBMD is reachable from remote subnets. */
+  public String bbmdLocalAddress;
+
+  /** Remote BBMD peers in IP or IP:PORT form. */
+  public List<String> bbmdPeers;
+
 }
