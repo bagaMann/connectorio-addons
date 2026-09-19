@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: read
+      contents: write
 
     steps:
       - name: Checkout ConnectorIO stable build branch
@@ -64,3 +64,21 @@ jobs:
             connectorio-addons/artifacts/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 90
+
+      - name: Publish permanent GitHub release
+        working-directory: connectorio-addons
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STABLE_TAG: bacnet-stable-cov-health-2026-09-19
+          STABLE_SHA: e35f8bd2b1b861d5fbcaf10729578ab25e2fe8ae
+        run: |
+          if gh release view "$STABLE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$STABLE_TAG" artifacts/*.kar artifacts/SHA256SUMS.txt \
+              --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$STABLE_TAG" artifacts/*.kar artifacts/SHA256SUMS.txt \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$STABLE_SHA" \
+              --title "BACnet stable COV + health 2026-09-19" \
+              --notes "Verified stable baseline: COV Present_Value, COV Status_Flags and BACnet device health monitoring. Wrapper source: bagaMann/bacnet4j-wrapper stable/cov-health-2026-09-19 at 0d31e70a915d1a45206dfff34f3280f48855e17d. ConnectorIO source: stable/cov-health-2026-09-19 at e35f8bd2b1b861d5fbcaf10729578ab25e2fe8ae."
+          fi
