@@ -66,6 +66,26 @@ public class BACnetIpv4BridgeHandler extends BasePollingBridgeHandler<Ipv4Config
 
   @Override
   public void initialize() {
+    // A handler instance can be reinitialized after a configuration update.
+    // dispose() cancels the previous future, so every initialization must start
+    // with a fresh future and client reference.
+    clientFuture = new CompletableFuture<>();
+    client = null;
+
+    Ipv4Config currentConfig = getBridgeConfig().orElse(null);
+    if (currentConfig == null) {
+      updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
+        "BACnet/IP bridge configuration is unavailable");
+      return;
+    }
+
+    try {
+      validateBroadcastConfiguration(currentConfig);
+    } catch (IllegalArgumentException e) {
+      updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, e.getMessage());
+      return;
+    }
+
     IpNetworkBuilder builder = getBridgeConfig().map(config -> {
       IpNetworkBuilder networkBuilder = new IpNetworkBuilder()
         .withBroadcast(config.broadcastAddress, 24)
@@ -143,6 +163,23 @@ public class BACnetIpv4BridgeHandler extends BasePollingBridgeHandler<Ipv4Config
     });
   }
 
+  private void validateBroadcastConfiguration(Ipv4Config config) {
+    String mode = getBroadcastMode(config);
+
+    if ("bbmd".equals(mode)) {
+      if (config.bbmdLocalAddress == null || config.bbmdLocalAddress.trim().isEmpty()) {
+        throw new IllegalArgumentException("BBMD local address must be configured when BBMD mode is enabled");
+      }
+    } else if ("foreign".equals(mode)) {
+      if (config.localBindAddress == null || config.localBindAddress.trim().isEmpty()) {
+        throw new IllegalArgumentException("Local address must be configured when Foreign Device mode is enabled");
+      }
+      if (config.foreignBbmd == null || config.foreignBbmd.trim().isEmpty()) {
+        throw new IllegalArgumentException("Foreign BBMD must be configured when Foreign Device mode is enabled");
+      }
+    }
+  }
+
   private String getBroadcastMode(Ipv4Config config) {
     String mode = config.broadcastMode;
     if (mode == null || mode.trim().isEmpty()) {
@@ -210,11 +247,17 @@ public class BACnetIpv4BridgeHandler extends BasePollingBridgeHandler<Ipv4Config
 
   @Override
   public void dispose() {
-    if (client != null) {
-      client.stop();
+    BacNetClient activeClient = client;
+    client = null;
+
+    if (activeClient != null) {
+      activeClient.stop();
     }
 
-    clientFuture.cancel(true);
+    CompletableFuture<BacNetClient> future = clientFuture;
+    if (future != null && !future.isDone()) {
+      future.cancel(true);
+    }
   }
 
   @Override
