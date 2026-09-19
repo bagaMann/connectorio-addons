@@ -309,7 +309,7 @@
       <parameter name="localBindAddress" type="text" required="false" groupName="ip">
         <description>
           IP address on which BACnet/IP communications are expected to take place.
-          Required when Foreign Device mode is selected.
+          This field is mandatory when Foreign Device mode is selected.
         </description>
         <label>Local address</label>
       </parameter>
@@ -328,6 +328,8 @@
         <description>
           Select how this bridge participates in BACnet/IP broadcast routing.
           Foreign Device is appropriate when a remote BBMD already exists, as in YABE.
+          After changing the broadcast mode or related BBMD/Foreign Device parameters,
+          restart this Bridge Thing (Stop then Start) so the BACnet/IP client is recreated with the new settings.
         </description>
         <options>
           <option value="disabled">Disabled</option>
@@ -359,6 +361,7 @@
         <description>
           Remote BBMD used to register this bridge as a BACnet Foreign Device.
           Supported formats: IP or IP:PORT. Port defaults to 47808.
+          Local address must also be configured. Restart the Bridge Thing after changing this value.
         </description>
       </parameter>
 
