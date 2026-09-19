@@ -1,0 +1,66 @@
+name: Build stable BACnet KAR
+
+on:
+  push:
+    branches:
+      - build/stable-cov-health-2026-09-19
+  workflow_dispatch:
+
+jobs:
+  build-kar:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout ConnectorIO stable build branch
+        uses: actions/checkout@v4
+        with:
+          path: connectorio-addons
+
+      - name: Checkout BACnet4J wrapper stable branch
+        uses: actions/checkout@v4
+        with:
+          repository: bagaMann/bacnet4j-wrapper
+          ref: stable/cov-health-2026-09-19
+          path: bacnet4j-wrapper
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Install stable BACnet4J wrapper
+        working-directory: bacnet4j-wrapper
+        run: |
+          mvn -U -pl api,ip,mstp -am install -DskipTests
+
+      - name: Build stable BACnet KAR
+        working-directory: connectorio-addons
+        run: |
+          mvn -U -Popenhab \
+            -pl kars/org.connectorio.addons.kar.bacnet \
+            -am package -DskipTests
+
+      - name: Collect KAR and checksum
+        working-directory: connectorio-addons
+        run: |
+          mkdir -p artifacts
+          cp kars/org.connectorio.addons.kar.bacnet/target/*.kar artifacts/
+          cd artifacts
+          sha256sum *.kar > SHA256SUMS.txt
+          ls -lh
+          cat SHA256SUMS.txt
+
+      - name: Upload stable BACnet KAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: bacnet-kar-stable-cov-health-2026-09-19
+          path: |
+            connectorio-addons/artifacts/*.kar
+            connectorio-addons/artifacts/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 90
