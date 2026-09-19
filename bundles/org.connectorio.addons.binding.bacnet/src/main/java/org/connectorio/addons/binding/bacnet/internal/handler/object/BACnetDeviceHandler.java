@@ -121,6 +121,11 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
 
   @Override
   public void initialize() {
+    // Device handlers are reinitialized when the parent BACnet/IP bridge is
+    // restarted or reconfigured. Never retain a completed future from the
+    // previous bridge client.
+    clientFuture = new CompletableFuture<>();
+
     device = getBridgeConfig()
       .map(cfg -> {
         Integer networkNumber = Optional.ofNullable(cfg.network)
@@ -178,7 +183,14 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
     }
     if (source != null) {
       source.stop();
+      source = null;
     }
+
+    CompletableFuture<BacNetClient> future = clientFuture;
+    if (future != null && !future.isDone()) {
+      future.cancel(true);
+    }
+
     super.dispose();
   }
 
