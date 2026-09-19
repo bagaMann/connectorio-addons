@@ -328,8 +328,7 @@
         <description>
           Select how this bridge participates in BACnet/IP broadcast routing.
           Foreign Device is appropriate when a remote BBMD already exists, as in YABE.
-          After changing the broadcast mode or related BBMD/Foreign Device parameters,
-          restart this Bridge Thing (Stop then Start) so the BACnet/IP client is recreated with the new settings.
+          Changes to these settings automatically recreate the BACnet/IP client and reconnect child BACnet devices.
         </description>
         <options>
           <option value="disabled">Disabled</option>
@@ -361,7 +360,7 @@
         <description>
           Remote BBMD used to register this bridge as a BACnet Foreign Device.
           Supported formats: IP or IP:PORT. Port defaults to 47808.
-          Local address must also be configured. Restart the Bridge Thing after changing this value.
+          Local address must also be configured.
         </description>
       </parameter>
 
