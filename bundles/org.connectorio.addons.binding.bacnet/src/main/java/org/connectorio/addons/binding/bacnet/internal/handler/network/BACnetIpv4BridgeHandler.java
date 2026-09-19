@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
@@ -36,11 +37,14 @@ import org.code_house.bacnet4j.wrapper.ip.BacNetIpClient;
 import org.connectorio.addons.binding.bacnet.internal.discovery.BACnetDeviceDiscoveryService;
 import org.connectorio.addons.binding.bacnet.internal.BACnetBindingConstants;
 import org.connectorio.addons.binding.bacnet.internal.config.Ipv4Config;
+import org.connectorio.addons.binding.bacnet.internal.handler.object.BACnetDeviceHandler;
 import org.connectorio.addons.binding.handler.polling.common.BasePollingBridgeHandler;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.ChannelUID;
+import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.ThingStatusDetail;
+import org.openhab.core.thing.binding.ThingHandler;
 import org.openhab.core.thing.binding.ThingHandlerService;
 import org.openhab.core.types.Command;
 import org.slf4j.Logger;
@@ -243,6 +247,36 @@ public class BACnetIpv4BridgeHandler extends BasePollingBridgeHandler<Ipv4Config
     cli.enableBbmd(config.bbmdLocalAddress.trim(), config.port, peers);
     logger.info("BACnet/IP BBMD enabled local={}:{} peers={}",
       config.bbmdLocalAddress.trim(), config.port, peers.size());
+  }
+
+  @Override
+  public void handleConfigurationUpdate(Map<String, Object> configurationParameters) {
+    boolean changed = isModifyingCurrentConfig(configurationParameters);
+    super.handleConfigurationUpdate(configurationParameters);
+
+    if (changed) {
+      reinitializeChildDevices();
+    }
+  }
+
+  private void reinitializeChildDevices() {
+    for (Thing child : getThing().getThings()) {
+      ThingHandler handler = child.getHandler();
+      if (!(handler instanceof BACnetDeviceHandler)) {
+        continue;
+      }
+
+      scheduler.execute(() -> {
+        try {
+          logger.debug("Reinitializing BACnet child {} after IPv4 bridge configuration change", child.getUID());
+          handler.dispose();
+          handler.initialize();
+        } catch (RuntimeException e) {
+          logger.warn("Unable to reinitialize BACnet child {} after bridge configuration change",
+            child.getUID(), e);
+        }
+      });
+    }
   }
 
   @Override
