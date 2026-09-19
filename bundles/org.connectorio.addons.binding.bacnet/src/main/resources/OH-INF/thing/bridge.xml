@@ -291,6 +291,10 @@
         <label>IP settings</label>
         <description>Settings related to IP network.</description>
       </parameter-group>
+      <parameter-group name="bbmd">
+        <label>BBMD</label>
+        <description>BACnet/IP Broadcast Management Device settings for communication across IP subnets.</description>
+      </parameter-group>
 
       <parameter name="localNetworkNumber" type="integer" required="true" groupName="network">
         <description>Identifier of network to which by default this bridge is bound.</description>
@@ -314,6 +318,29 @@
       <parameter name="broadcastAddress" type="text" required="true" groupName="ip">
         <description>Address used for sending BACnet broadcast messages.</description>
         <label>Broadcast address</label>
+      </parameter>
+
+      <parameter name="bbmdEnabled" type="boolean" required="false" groupName="bbmd">
+        <label>Enable BBMD</label>
+        <description>Enable BBMD operation for this BACnet/IP bridge. Disabled preserves normal BACnet/IP behaviour.</description>
+        <default>false</default>
+      </parameter>
+
+      <parameter name="bbmdLocalAddress" type="text" required="false" groupName="bbmd">
+        <label>BBMD local address</label>
+        <description>
+          IPv4 address by which this openHAB host is reachable from remote BBMDs.
+          This address is used in the BDT only and does not change the BACnet/IP socket bind address.
+        </description>
+      </parameter>
+
+      <parameter name="bbmdPeers" type="text" required="false" multiple="true" groupName="bbmd">
+        <label>BBMD peers</label>
+        <description>
+          Remote BBMDs in the Broadcast Distribution Table. Add one entry per row.
+          Supported formats: IP or IP:PORT. Port defaults to 47808.
+          BBMD-to-BBMD distribution uses unicast (255.255.255.255 mask).
+        </description>
       </parameter>
 
       <parameter name="refreshInterval" type="integer" groupName="basic" required="false">
