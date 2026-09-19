@@ -292,8 +292,8 @@
         <description>Settings related to IP network.</description>
       </parameter-group>
       <parameter-group name="bbmd">
-        <label>BBMD</label>
-        <description>BACnet/IP Broadcast Management Device settings for communication across IP subnets.</description>
+        <label>BACnet/IP broadcast routing</label>
+        <description>BBMD and Foreign Device settings for BACnet/IP communication across routed IP subnets.</description>
       </parameter-group>
 
       <parameter name="localNetworkNumber" type="integer" required="true" groupName="network">
@@ -307,7 +307,10 @@
         <default>1339</default>
       </parameter>
       <parameter name="localBindAddress" type="text" required="false" groupName="ip">
-        <description>IP address on which communications to system are expected to take place.</description>
+        <description>
+          IP address on which BACnet/IP communications are expected to take place.
+          Required when Foreign Device mode is selected.
+        </description>
         <label>Local address</label>
       </parameter>
       <parameter name="port" type="integer" required="true" groupName="ip">
@@ -320,27 +323,52 @@
         <label>Broadcast address</label>
       </parameter>
 
-      <parameter name="bbmdEnabled" type="boolean" required="false" groupName="bbmd">
-        <label>Enable BBMD</label>
-        <description>Enable BBMD operation for this BACnet/IP bridge. Disabled preserves normal BACnet/IP behaviour.</description>
-        <default>false</default>
+      <parameter name="broadcastMode" type="text" required="false" groupName="bbmd">
+        <label>Broadcast mode</label>
+        <description>
+          Select how this bridge participates in BACnet/IP broadcast routing.
+          Foreign Device is appropriate when a remote BBMD already exists, as in YABE.
+        </description>
+        <options>
+          <option value="disabled">Disabled</option>
+          <option value="bbmd">BBMD</option>
+          <option value="foreign">Foreign Device</option>
+        </options>
+        <default>disabled</default>
       </parameter>
 
       <parameter name="bbmdLocalAddress" type="text" required="false" groupName="bbmd">
         <label>BBMD local address</label>
         <description>
-          IPv4 address of this openHAB BBMD. When BBMD is enabled this address is also used
-          as the BACnet/IP unicast bind address; the local broadcast socket is opened separately.
+          IPv4 address of this openHAB BBMD. Used only in BBMD mode. This address is also
+          used as the BACnet/IP unicast bind address; the local broadcast socket is opened separately.
         </description>
       </parameter>
 
       <parameter name="bbmdPeers" type="text" required="false" multiple="true" groupName="bbmd">
         <label>BBMD peers</label>
         <description>
-          Remote BBMDs in the Broadcast Distribution Table. Add one entry per row.
-          Supported formats: IP or IP:PORT. Port defaults to 47808.
+          Remote BBMDs in this BBMD's Broadcast Distribution Table. Used only in BBMD mode.
+          Add one entry per row as IP or IP:PORT. Port defaults to 47808.
           BBMD-to-BBMD distribution uses unicast (255.255.255.255 mask).
         </description>
+      </parameter>
+
+      <parameter name="foreignBbmd" type="text" required="false" groupName="bbmd">
+        <label>Foreign BBMD</label>
+        <description>
+          Remote BBMD used to register this bridge as a BACnet Foreign Device.
+          Supported formats: IP or IP:PORT. Port defaults to 47808.
+        </description>
+      </parameter>
+
+      <parameter name="foreignDeviceTtl" type="integer" required="false" min="30" groupName="bbmd">
+        <label>Foreign Device TTL</label>
+        <description>
+          Foreign Device registration lifetime in seconds. BACnet4J renews the registration automatically.
+        </description>
+        <unitLabel>s</unitLabel>
+        <default>600</default>
       </parameter>
 
       <parameter name="refreshInterval" type="integer" groupName="basic" required="false">
