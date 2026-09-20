@@ -59,7 +59,8 @@ jobs:
           test -f /tmp/kar-check/repository/org/code-house/bacnet4j/mstp/1.3.0-SNAPSHOT/mstp-1.3.0-SNAPSHOT.jar
 
           unzip -p /tmp/kar-check/repository/org/code-house/bacnet4j/api/1.3.0-SNAPSHOT/api-1.3.0-SNAPSHOT.jar META-INF/MANIFEST.MF > /tmp/api-manifest.txt
-          grep -q 'com.serotonin.bacnet4j.enums;version="6.1.0.beta2"' /tmp/api-manifest.txt
+          tr -d '\\r\\n ' < /tmp/api-manifest.txt > /tmp/api-manifest-flat.txt
+          grep -q 'com.serotonin.bacnet4j.enums;version="6.1.0.beta2"' /tmp/api-manifest-flat.txt
 
           if find /tmp/kar-check/repository/org/code-house/bacnet4j -path '*1.3.0-beta1*' | grep -q .; then
             echo "ERROR: old bacnet4j-wrapper 1.3.0-beta1 is still packaged"
@@ -95,8 +96,12 @@ jobs:
           RELEASE_TAG: bacnet-stable-bbmd-foreign-device-2026-09-20-r2
           RELEASE_SHA: d6a3bf8a3ffb3cca9d54268a425f7c3f9f306696
         run: |
-          gh release create "$RELEASE_TAG" artifacts/*.kar artifacts/SHA256SUMS.txt \
-            --repo "$GITHUB_REPOSITORY" \
-            --target "$RELEASE_SHA" \
-            --title "BACnet stable R2: COV + health + BBMD + Foreign Device" \
-            --notes "Corrected KAR packaging. Uses ConnectorIO hotfix commit d6a3bf8a3ffb3cca9d54268a425f7c3f9f306696 and bacnet4j-wrapper stable commit 4afe087401b2237f77d79718730997c99bd907c7. The previous KAR incorrectly packaged bacnet4j-wrapper 1.3.0-beta1 / BACnet4J 6.0.0 while the binding required BACnet4J 6.1.x. R2 packages wrapper 1.3.0-SNAPSHOT with BACnet4J 6.1.0-beta.2."
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" artifacts/*.kar artifacts/SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$RELEASE_TAG" artifacts/*.kar artifacts/SHA256SUMS.txt \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$RELEASE_SHA" \
+              --title "BACnet stable R2: COV + health + BBMD + Foreign Device" \
+              --notes "Corrected KAR packaging. Uses ConnectorIO hotfix commit d6a3bf8a3ffb3cca9d54268a425f7c3f9f306696 and bacnet4j-wrapper stable commit 4afe087401b2237f77d79718730997c99bd907c7. The previous KAR incorrectly packaged bacnet4j-wrapper 1.3.0-beta1 / BACnet4J 6.0.0 while the binding required BACnet4J 6.1.x. R2 packages wrapper 1.3.0-SNAPSHOT with BACnet4J 6.1.0-beta.2."
+          fi
