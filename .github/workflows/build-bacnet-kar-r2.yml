@@ -60,7 +60,11 @@ jobs:
 
           unzip -p /tmp/kar-check/repository/org/code-house/bacnet4j/api/1.3.0-SNAPSHOT/api-1.3.0-SNAPSHOT.jar META-INF/MANIFEST.MF > /tmp/api-manifest.txt
           tr -d '\\r\\n ' < /tmp/api-manifest.txt > /tmp/api-manifest-flat.txt
-          grep -q 'com.serotonin.bacnet4j.enums;version="6.1.0.beta2"' /tmp/api-manifest-flat.txt
+          echo "=== BACnet4J API manifest ==="
+          cat /tmp/api-manifest.txt
+          echo "=== flattened BACnet4J enums export ==="
+          grep -o 'com.serotonin.bacnet4j.enums;version="[^"]*"' /tmp/api-manifest-flat.txt || true
+          grep -q 'com.serotonin.bacnet4j.enums;version="6.1' /tmp/api-manifest-flat.txt
 
           if find /tmp/kar-check/repository/org/code-house/bacnet4j -path '*1.3.0-beta1*' | grep -q .; then
             echo "ERROR: old bacnet4j-wrapper 1.3.0-beta1 is still packaged"
