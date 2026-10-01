@@ -146,7 +146,7 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
     covEnabled = !"polling".equals(updateMode);
     covLifetime = deviceConfig.covLifetime > 0 ? deviceConfig.covLifetime : 300;
 
-    if (deviceConfig.discoverChannels && thing.getChannels().isEmpty()) {
+    if (deviceConfig.discoverPresentValue && thing.getChannels().isEmpty()) {
       updateChannels(client);
     }
 
@@ -218,123 +218,10 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
   private void updateChannels(BacNetClient client) {
     BridgeBuilder builder = editThing();
     builder.withChannels(new ArrayList<>());
-    DeviceConfig config = getConfigAs(DeviceConfig.class);
     for (BacNetObject object : client.getDeviceObjects(device)) {
-      if (config.discoverPresentValue) {
-        createChannel(builder, object, PropertyIdentifier.presentValue);
-      }
-      if (config.discoverStatusFlags && supportsStatusFlags(object.getType())) {
-        createStatusFlagsChannel(builder, object);
-      }
-      if (config.discoverEventState && supportsEventState(object.getType())) {
-        createEventStateChannel(builder, object);
-      }
-      if (config.discoverOutOfService && supportsOutOfService(object.getType())) {
-        createOutOfServiceChannel(builder, object);
-      }
-      if (Type.SCHEDULE.equals(object.getType())) {
-        createChannel(builder, object, PropertyIdentifier.weeklySchedule);
-        createChannel(builder, object, PropertyIdentifier.exceptionSchedule);
-        createChannel(builder, object, PropertyIdentifier.effectivePeriod);
-        createChannel(builder, object, PropertyIdentifier.scheduleDefault);
-      }
+      createChannel(builder, object, PropertyIdentifier.presentValue);
     }
     updateThing(builder.build());
-  }
-
-  private boolean supportsEventState(Type type) {
-    switch (type) {
-      case ANALOG_INPUT:
-      case ANALOG_OUTPUT:
-      case ANALOG_VALUE:
-      case BINARY_INPUT:
-      case BINARY_OUTPUT:
-      case BINARY_VALUE:
-      case MULTISTATE_INPUT:
-      case MULTISTATE_OUTPUT:
-      case MULTISTATE_VALUE:
-        return true;
-      default:
-        return false;
-    }
-  }
-
-  private boolean supportsOutOfService(Type type) {
-    return supportsEventState(type);
-  }
-
-  private boolean supportsStatusFlags(Type type) {
-    switch (type) {
-      case ANALOG_INPUT:
-      case ANALOG_OUTPUT:
-      case ANALOG_VALUE:
-      case BINARY_INPUT:
-      case BINARY_OUTPUT:
-      case BINARY_VALUE:
-      case MULTISTATE_INPUT:
-      case MULTISTATE_OUTPUT:
-      case MULTISTATE_VALUE:
-        return true;
-      default:
-        return false;
-    }
-  }
-
-  private void createStatusFlagsChannel(BridgeBuilder builder, BacNetObject object) {
-    String channelId = object.getType().name().toLowerCase() + "-" + object.getId() + "-status-flags";
-    ChannelUID uid = new ChannelUID(thing.getUID(), channelId);
-    Map<String, Object> properties = new LinkedHashMap<>();
-    properties.put("instance", object.getId());
-    properties.put("type", object.getType().name());
-    properties.put("readOnly", true);
-    properties.put("propertyIdentifier", PropertyIdentifier.statusFlags.toString());
-    properties.put("refreshInterval", 0);
-    Channel channel = ChannelBuilder.create(uid)
-      .withType(new ChannelTypeUID(BACnetBindingConstants.BINDING_ID, "deviceReadableStatusFlags"))
-      .withConfiguration(new Configuration(properties))
-      .withLabel(object.getName() + " - Status flags")
-      .withDescription(object.getDescription())
-      .withAcceptedItemType(CoreItemFactory.NUMBER)
-      .build();
-    builder.withChannel(channel);
-  }
-
-  private void createEventStateChannel(BridgeBuilder builder, BacNetObject object) {
-    String channelId = object.getType().name().toLowerCase() + "-" + object.getId() + "-event-state";
-    ChannelUID uid = new ChannelUID(thing.getUID(), channelId);
-    Map<String, Object> properties = new LinkedHashMap<>();
-    properties.put("instance", object.getId());
-    properties.put("type", object.getType().name());
-    properties.put("readOnly", true);
-    properties.put("propertyIdentifier", PropertyIdentifier.eventState.toString());
-    properties.put("refreshInterval", 0);
-    Channel channel = ChannelBuilder.create(uid)
-      .withType(new ChannelTypeUID(BACnetBindingConstants.BINDING_ID, "deviceReadableEventState"))
-      .withConfiguration(new Configuration(properties))
-      .withLabel(object.getName() + " - Event state")
-      .withDescription(object.getDescription())
-      .withAcceptedItemType(CoreItemFactory.NUMBER)
-      .build();
-    builder.withChannel(channel);
-  }
-
-  private void createOutOfServiceChannel(BridgeBuilder builder, BacNetObject object) {
-    String channelId = object.getType().name().toLowerCase() + "-" + object.getId() + "-out-of-service";
-    ChannelUID uid = new ChannelUID(thing.getUID(), channelId);
-    Map<String, Object> properties = new LinkedHashMap<>();
-    properties.put("instance", object.getId());
-    properties.put("type", object.getType().name());
-    properties.put("readOnly", true);
-    properties.put("propertyIdentifier", PropertyIdentifier.outOfService.toString());
-    properties.put("refreshInterval", 0);
-    Channel channel = ChannelBuilder.create(uid)
-      .withType(new ChannelTypeUID(BACnetBindingConstants.BINDING_ID, "deviceReadableOutOfService"))
-      .withConfiguration(new Configuration(properties))
-      .withLabel(object.getName() + " - Out of service")
-      .withDescription(object.getDescription())
-      .withAcceptedItemType(CoreItemFactory.SWITCH)
-      .build();
-    builder.withChannel(channel);
   }
 
   private void createChannel(BridgeBuilder builder, BacNetObject object, PropertyIdentifier propertyIdentifier) {
