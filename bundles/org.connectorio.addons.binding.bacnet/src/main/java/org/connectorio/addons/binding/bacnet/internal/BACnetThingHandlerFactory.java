@@ -21,12 +21,10 @@
  */
 package org.connectorio.addons.binding.bacnet.internal;
 
-import org.code_house.bacnet4j.wrapper.api.Type;
 import org.connectorio.addons.binding.bacnet.internal.handler.network.BACnetIpv4BridgeHandler;
 import org.connectorio.addons.binding.bacnet.internal.handler.network.BACnetMstpBridgeHandler;
 import org.connectorio.addons.binding.bacnet.internal.handler.object.BACnetIpDeviceHandler;
 import org.connectorio.addons.binding.bacnet.internal.handler.object.BACnetMstpDeviceHandler;
-import org.connectorio.addons.binding.bacnet.internal.handler.object.BACnetObjectThingHandler;
 import org.connectorio.addons.binding.source.SourceFactory;
 import org.connectorio.addons.communication.watchdog.WatchdogManager;
 import org.connectorio.addons.link.LinkManager;
@@ -81,34 +79,15 @@ public class BACnetThingHandlerFactory extends BaseThingHandlerFactory implement
       }
     }
 
-    if (ANALOG_INPUT_THING_TYPE.equals(thingTypeUID)) {
-      return new BACnetObjectThingHandler<>(thing, Type.ANALOG_INPUT, sourceFactory);
-    } else if (ANALOG_OUTPUT_THING_TYPE.equals(thingTypeUID)) {
-      return new BACnetObjectThingHandler<>(thing, Type.ANALOG_OUTPUT, sourceFactory);
-    } else if (ANALOG_VALUE_THING_TYPE.equals(thingTypeUID)) {
-      return new BACnetObjectThingHandler<>(thing, Type.ANALOG_VALUE, sourceFactory);
-    } else if (BINARY_INPUT_THING_TYPE.equals(thingTypeUID)) {
-      return new BACnetObjectThingHandler<>(thing, Type.BINARY_INPUT, sourceFactory);
-    } else if (BINARY_OUTPUT_THING_TYPE.equals(thingTypeUID)) {
-      return new BACnetObjectThingHandler<>(thing, Type.BINARY_OUTPUT, sourceFactory);
-    } else if (BINARY_VALUE_THING_TYPE.equals(thingTypeUID)) {
-      return new BACnetObjectThingHandler<>(thing, Type.BINARY_VALUE, sourceFactory);
-    } else if (MULTISTATE_INPUT_THING_TYPE.equals(thingTypeUID)) {
-      return new BACnetObjectThingHandler<>(thing, Type.MULTISTATE_INPUT, sourceFactory);
-    } else if (MULTISTATE_OUTPUT_THING_TYPE.equals(thingTypeUID)) {
-      return new BACnetObjectThingHandler<>(thing, Type.MULTISTATE_OUTPUT, sourceFactory);
-    } else if (MULTISTATE_VALUE_THING_TYPE.equals(thingTypeUID)) {
-      return new BACnetObjectThingHandler<>(thing, Type.MULTISTATE_VALUE, sourceFactory);
-    } else if (SCHEDULE_THING_TYPE.equals(thingTypeUID)) {
-      return new BACnetObjectThingHandler<>(thing, Type.SCHEDULE, sourceFactory);
-    }
-
     return null;
   }
 
   @Override
   public boolean supportsThingType(ThingTypeUID thingTypeUID) {
-    return BINDING_ID.equals(thingTypeUID.getBindingId());
+    return IPV4_BRIDGE_THING_TYPE.equals(thingTypeUID)
+      || MSTP_BRIDGE_THING_TYPE.equals(thingTypeUID)
+      || IP_DEVICE_THING_TYPE.equals(thingTypeUID)
+      || MSTP_DEVICE_THING_TYPE.equals(thingTypeUID);
   }
 
 }
