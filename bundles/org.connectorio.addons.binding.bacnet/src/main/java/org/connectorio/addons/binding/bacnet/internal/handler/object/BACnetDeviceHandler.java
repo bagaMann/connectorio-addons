@@ -28,8 +28,6 @@ import com.serotonin.bacnet4j.type.enumerated.EventState;
 import com.serotonin.bacnet4j.type.enumerated.PropertyIdentifier;
 import com.serotonin.bacnet4j.type.primitive.Null;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -47,7 +45,6 @@ import org.connectorio.addons.binding.bacnet.internal.command.PrioritizedCommand
 import org.connectorio.addons.binding.bacnet.internal.command.ResetCommand;
 import org.connectorio.addons.binding.bacnet.internal.config.DeviceChannelConfig;
 import org.connectorio.addons.binding.bacnet.internal.config.DeviceConfig;
-import org.connectorio.addons.binding.bacnet.internal.discovery.BACnetPropertyDiscoveryService;
 import org.connectorio.addons.binding.bacnet.internal.handler.BACnetObjectBridgeHandler;
 import org.connectorio.addons.binding.bacnet.internal.handler.channel.converter.CompositeConverter;
 import org.connectorio.addons.binding.bacnet.internal.handler.network.BACnetNetworkBridgeHandler;
@@ -74,7 +71,6 @@ import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.ThingStatusDetail;
-import org.openhab.core.thing.binding.ThingHandlerService;
 import org.openhab.core.thing.binding.builder.BridgeBuilder;
 import org.openhab.core.thing.binding.builder.ChannelBuilder;
 import org.openhab.core.thing.type.ChannelTypeUID;
@@ -94,7 +90,6 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
 
   private Device device;
   private CompletableFuture<BacNetClient> clientFuture = new CompletableFuture<>();
-  private boolean discoverObjects;
   private boolean pollingEnabled = true;
   private boolean covEnabled = true;
   private int covLifetime = 300;
@@ -146,7 +141,6 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
 
   protected void initializeChannels(BacNetClient client) {
     DeviceConfig deviceConfig = getConfigAs(DeviceConfig.class);
-    discoverObjects = deviceConfig.discoverObjects;
     String updateMode = Optional.ofNullable(deviceConfig.updateMode).orElse("polling-cov");
     pollingEnabled = !"cov".equals(updateMode);
     covEnabled = !"polling".equals(updateMode);
@@ -514,12 +508,6 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
       else clientFuture.join().setObjectPropertyValue(object, attribute, command, converter, priority);
       logger.debug("Command {} for property {} executed successfully", command, object);
     }
-  }
-
-  @Override
-  public Collection<Class<? extends ThingHandlerService>> getServices() {
-    if (discoverObjects) return Collections.singleton(BACnetPropertyDiscoveryService.class);
-    return Collections.emptySet();
   }
 
   @Override
