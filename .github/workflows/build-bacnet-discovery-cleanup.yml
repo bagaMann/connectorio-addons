@@ -1,0 +1,54 @@
+name: Build BACnet Present Value discovery cleanup
+
+on:
+  push:
+    branches:
+      - build/cleanup-bacnet-discovery-present-value
+  workflow_dispatch:
+
+jobs:
+  build-kar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout ConnectorIO cleanup branch
+        uses: actions/checkout@v4
+        with:
+          path: connectorio-addons
+
+      - name: Checkout tested BACnet4J wrapper
+        uses: actions/checkout@v4
+        with:
+          repository: bagaMann/bacnet4j-wrapper
+          ref: stable/bacnet-tested-2026-10-01
+          path: bacnet4j-wrapper
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Install BACnet4J wrapper
+        working-directory: bacnet4j-wrapper
+        run: mvn -U -pl api,ip,mstp -am install -DskipTests
+
+      - name: Build BACnet KAR
+        working-directory: connectorio-addons
+        run: |
+          mvn -U -Popenhab \
+            -pl kars/org.connectorio.addons.kar.bacnet \
+            -am package -DskipTests
+
+      - name: Verify simplified discovery UI
+        working-directory: connectorio-addons
+        run: |
+          set -euo pipefail
+          XML=bundles/org.connectorio.addons.binding.bacnet/src/main/resources/OH-INF/thing/bridge.xml
+          test "$(grep -c 'name="discoverPresentValue"' "$XML")" -eq 2
+          ! grep -q 'name="discoverChannels"' "$XML"
+          ! grep -q 'name="discoverStatusFlags"' "$XML"
+          ! grep -q 'name="discoverEventState"' "$XML"
+          ! grep -q 'name="discoverOutOfService"' "$XML"
+          ls -lh kars/org.connectorio.addons.kar.bacnet/target/*.kar
