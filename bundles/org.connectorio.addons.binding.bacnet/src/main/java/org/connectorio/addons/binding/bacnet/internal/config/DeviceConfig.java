@@ -26,11 +26,7 @@ public class DeviceConfig extends BACnetConfig {
   public int instance;
   public Integer network;
 
-  public boolean discoverChannels = true;
   public boolean discoverPresentValue = true;
-  public boolean discoverStatusFlags = true;
-  public boolean discoverEventState = false;
-  public boolean discoverOutOfService = false;
 
   /** polling, cov, or polling-cov. */
   public String updateMode = "polling-cov";
