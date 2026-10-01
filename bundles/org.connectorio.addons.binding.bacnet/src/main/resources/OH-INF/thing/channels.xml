@@ -137,7 +137,7 @@
 
   <channel-type id="deviceWriteableBinary">
     <item-type>Switch</item-type>
-    <label>Present value</label>
+    <label>Present value — Binary</label>
     <config-description-ref uri="thing-type:co7io-bacnet:device-read-write"></config-description-ref>
   </channel-type>
 
@@ -149,7 +149,7 @@
 
   <channel-type id="deviceWriteableNumber">
     <item-type>Number</item-type>
-    <label>Present value</label>
+    <label>Present value — Number</label>
     <config-description-ref uri="thing-type:co7io-bacnet:device-read-write"></config-description-ref>
   </channel-type>
 
@@ -212,7 +212,7 @@
 
   <channel-type id="deviceWriteableDateTime">
     <item-type>DateTime</item-type>
-    <label>Present value</label>
+    <label>Present value — Date/Time</label>
     <config-description-ref uri="thing-type:co7io-bacnet:device-read-write"></config-description-ref>
   </channel-type>
 
@@ -224,7 +224,7 @@
 
   <channel-type id="deviceWriteableText">
     <item-type>Text</item-type>
-    <label>Present value</label>
+    <label>Present value — Text</label>
     <config-description-ref uri="thing-type:co7io-bacnet:device-read-write"></config-description-ref>
   </channel-type>
 
