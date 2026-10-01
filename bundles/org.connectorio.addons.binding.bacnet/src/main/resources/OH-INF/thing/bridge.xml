@@ -123,15 +123,6 @@
         </description>
         <default>true</default>
       </parameter>
-      <parameter name="discoverObjects" type="boolean" groupName="discovery" required="false">
-        <label>Discover objects</label>
-        <description>
-          Enabling this feature will look for BACnet objects which can be mapped to Thing instances.
-          For each supported BACnet object there will be one Thing instance.
-          Please be aware that it most of the situations it will lead to multiplication of things.
-        </description>
-        <default>false</default>
-      </parameter>
       <parameter name="discoverPresentValue" type="boolean" groupName="discovery" required="false">
         <label>Discover Present Value</label>
         <description>Automatically create Present_Value channels for discovered BACnet objects.</description>
@@ -245,15 +236,6 @@
           Please note this is experimental feature and works only if device channel list is empty.
         </description>
         <default>true</default>
-      </parameter>
-      <parameter name="discoverObjects" type="boolean" groupName="discovery" required="false">
-        <label>Discover objects</label>
-        <description>
-          Enabling this feature will look for BACnet objects which can be mapped to Thing instances.
-          For each supported BACnet object there will be one Thing instance.
-          Please be aware that it most of the situations it will lead to multiplication of things.
-        </description>
-        <default>false</default>
       </parameter>
       <parameter name="discoverPresentValue" type="boolean" groupName="discovery" required="false">
         <label>Discover Present Value</label>
