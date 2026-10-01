@@ -114,34 +114,10 @@
         <default>0</default>
       </parameter>
 
-      <parameter name="discoverChannels" type="boolean" groupName="discovery" required="false">
-        <label>Discover channels</label>
-        <description>
-          Because each BACnet object is linked to a BACnet device, device will know associated objects.
-          Thanks to this setting it is possible to aggregate all objects states (present values) in one place.
-          Please note this is experimental feature and works only if device channel list is empty.
-        </description>
-        <default>true</default>
-      </parameter>
       <parameter name="discoverPresentValue" type="boolean" groupName="discovery" required="false">
         <label>Discover Present Value</label>
-        <description>Automatically create Present_Value channels for discovered BACnet objects.</description>
+        <description>Automatically create Present_Value channels for BACnet objects when the device has no channels yet. Other properties can be added manually as channels.</description>
         <default>true</default>
-      </parameter>
-      <parameter name="discoverStatusFlags" type="boolean" groupName="discovery" required="false">
-        <label>Discover Status Flags</label>
-        <description>Automatically create Status_Flags channels for discovered BACnet objects.</description>
-        <default>true</default>
-      </parameter>
-      <parameter name="discoverEventState" type="boolean" groupName="discovery" required="false">
-        <label>Discover Event State</label>
-        <description>Automatically create Event_State channels for discovered BACnet objects.</description>
-        <default>false</default>
-      </parameter>
-      <parameter name="discoverOutOfService" type="boolean" groupName="discovery" required="false">
-        <label>Discover Out Of Service</label>
-        <description>Automatically create Out_Of_Service channels for discovered BACnet objects.</description>
-        <default>false</default>
       </parameter>
     </config-description>
   </bridge-type>
@@ -228,34 +204,10 @@
         <default>0</default>
       </parameter>
 
-      <parameter name="discoverChannels" type="boolean" groupName="discovery" required="false">
-        <label>Discover channels</label>
-        <description>
-          Because each BACnet object is linked to a BACnet device, device will know associated objects.
-          Thanks to this setting it is possible to aggregate all objects states (present values) in one place.
-          Please note this is experimental feature and works only if device channel list is empty.
-        </description>
-        <default>true</default>
-      </parameter>
       <parameter name="discoverPresentValue" type="boolean" groupName="discovery" required="false">
         <label>Discover Present Value</label>
-        <description>Automatically create Present_Value channels for discovered BACnet objects.</description>
+        <description>Automatically create Present_Value channels for BACnet objects when the device has no channels yet. Other properties can be added manually as channels.</description>
         <default>true</default>
-      </parameter>
-      <parameter name="discoverStatusFlags" type="boolean" groupName="discovery" required="false">
-        <label>Discover Status Flags</label>
-        <description>Automatically create Status_Flags channels for discovered BACnet objects.</description>
-        <default>true</default>
-      </parameter>
-      <parameter name="discoverEventState" type="boolean" groupName="discovery" required="false">
-        <label>Discover Event State</label>
-        <description>Automatically create Event_State channels for discovered BACnet objects.</description>
-        <default>false</default>
-      </parameter>
-      <parameter name="discoverOutOfService" type="boolean" groupName="discovery" required="false">
-        <label>Discover Out Of Service</label>
-        <description>Automatically create Out_Of_Service channels for discovered BACnet objects.</description>
-        <default>false</default>
       </parameter>
     </config-description>
   </bridge-type>
