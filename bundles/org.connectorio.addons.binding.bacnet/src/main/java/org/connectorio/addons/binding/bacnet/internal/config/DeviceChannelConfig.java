@@ -34,6 +34,8 @@ public class DeviceChannelConfig extends PollingConfiguration {
   }
 
   public int instance;
+  public int decimalPlaces = 2;
+  public boolean useBacnetUnit = true;
   public Type type;
   public String propertyIdentifier;
   public Integer writePriority;
