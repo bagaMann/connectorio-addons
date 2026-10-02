@@ -175,4 +175,69 @@
     </parameter>
   </config-description>
 
+  <config-description uri="thing-type:co7io-bacnet:device-number-read-write">
+    <parameter-group name="object">
+      <label>Object configuration</label>
+      <description>Information about object which is required to populate channel.</description>
+    </parameter-group>
+    <parameter-group name="basic">
+      <label>Required configuration</label>
+      <description>Below fields are required in order to read/write data from PLC.</description>
+    </parameter-group>
+
+    <parameter name="instance" type="integer" required="true" groupName="object" min="0">
+      <label>Instance number</label>
+      <description>Object instance</description>
+    </parameter>
+    <parameter name="type" type="text" required="true" groupName="object">
+      <label>Object type</label>
+      <description>Object kind</description>
+      <limitToOptions>true</limitToOptions>
+      <options>
+        <option value="ANALOG_INPUT">analog input</option>
+        <option value="ANALOG_OUTPUT">analog output</option>
+        <option value="ANALOG_VALUE">analog value</option>
+        <option value="BINARY_INPUT">binary input</option>
+        <option value="BINARY_OUTPUT">binary output</option>
+        <option value="BINARY_VALUE">binary value</option>
+        <option value="MULTISTATE_INPUT">multistate input</option>
+        <option value="MULTISTATE_OUTPUT">multistate output</option>
+        <option value="MULTISTATE_VALUE">multistate value</option>
+        <option value="CHARACTER_STRING">character string value</option>
+        <option value="DATE_TIME">date time value</option>
+        <option value="LARGE_ANALOG">large analog value</option>
+        <option value="OCTET_STRING">octet string value</option>
+        <option value="TIME">time value</option>
+        <option value="DATE_VALUE">date value</option>
+        <option value="INTEGER">integer value</option>
+        <option value="POSITIVE_INTEGER">positive integer value</option>
+        <option value="DATE_TIME_PATTERN">datetime pattern value</option>
+        <option value="TIME_PATTERN">time pattern value</option>
+        <option value="DATE_PATTERN">date pattern value</option>
+        <option value="SCHEDULE">schedule</option>
+        <option value="CALENDAR">calendar</option>
+      </options>
+    </parameter>
+
+    <parameter name="decimalPlaces" type="integer" groupName="basic" required="false" min="0" max="6">
+      <label>Decimal places</label>
+      <description>Number of decimal places used only for display. The BACnet value itself is not rounded.</description>
+      <default>2</default>
+    </parameter>
+    <parameter name="useBacnetUnit" type="boolean" groupName="basic" required="false">
+      <label>Use BACnet unit</label>
+      <description>Append the BACnet engineering unit to the displayed value when the object provides one.</description>
+      <default>true</default>
+    </parameter>
+
+    <parameter name="refreshInterval" type="integer" groupName="basic" required="false">
+      <label>Refresh interval</label>
+      <description>
+        Time between next poll cycles. If no value is given polling is based on value set on thing or bridge value.
+      </description>
+      <unitLabel>ms</unitLabel>
+      <default>0</default>
+    </parameter>
+  </config-description>
+
 </config-description:config-descriptions>
