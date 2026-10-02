@@ -338,6 +338,56 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
     return null;
   }
 
+  private String resolvePropertyIdentifier(Channel channel, DeviceChannelConfig config) {
+    String channelType = channel.getChannelTypeUID() == null ? "" : channel.getChannelTypeUID().getId();
+
+    switch (channelType) {
+      case "deviceWriteableBinary":
+      case "deviceReadableBinary":
+      case "deviceWriteableNumber":
+      case "deviceReadableNumber":
+      case "deviceWriteableDateTime":
+      case "deviceReadableDateTime":
+      case "deviceWriteableText":
+      case "deviceReadableText":
+        return PropertyIdentifier.presentValue.toString();
+      case "deviceReadableStatusFlags":
+        return PropertyIdentifier.statusFlags.toString();
+      case "deviceReadableEventState":
+        return PropertyIdentifier.eventState.toString();
+      case "deviceWriteableOutOfService":
+      case "deviceReadableOutOfService":
+        return PropertyIdentifier.outOfService.toString();
+      default:
+        return Optional.ofNullable(config.propertyIdentifier)
+          .filter(value -> !value.trim().isEmpty())
+          .orElse(PropertyIdentifier.presentValue.toString());
+    }
+  }
+
+  private boolean isReadOnlyChannel(Channel channel, DeviceChannelConfig config) {
+    String channelType = channel.getChannelTypeUID() == null ? "" : channel.getChannelTypeUID().getId();
+
+    switch (channelType) {
+      case "deviceReadableBinary":
+      case "deviceReadableNumber":
+      case "deviceReadableDateTime":
+      case "deviceReadableText":
+      case "deviceReadableStatusFlags":
+      case "deviceReadableEventState":
+      case "deviceReadableOutOfService":
+        return true;
+      case "deviceWriteableBinary":
+      case "deviceWriteableNumber":
+      case "deviceWriteableDateTime":
+      case "deviceWriteableText":
+      case "deviceWriteableOutOfService":
+        return false;
+      default:
+        return config.readOnly;
+    }
+  }
+
   protected abstract Device createDevice(C config, Integer networkNumber);
 
   @Override
@@ -353,7 +403,7 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
     Channel channel = getThing().getChannel(channelUID);
     DeviceChannelConfig config = channel.getConfiguration().as(DeviceChannelConfig.class);
     BacNetObject object = new BacNetObject(device, config.instance, config.type);
-    String attribute = config.propertyIdentifier;
+    String attribute = resolvePropertyIdentifier(channel, config);
 
     if (command == RefreshType.REFRESH) {
       if (source != null) {
@@ -373,6 +423,21 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
           }
         });
       }
+    } else if (isReadOnlyChannel(channel, config)) {
+      logger.warn("Ignoring write command {} for read-only BACnet channel {}", command, channelUID);
+      return;
+    } else if (PropertyIdentifier.outOfService.toString().equals(attribute)) {
+      if (!(command instanceof org.openhab.core.library.types.OnOffType)) {
+        logger.warn("Unsupported command {} for BACnet Out_Of_Service channel {}", command, channelUID);
+        return;
+      }
+
+      boolean outOfService = org.openhab.core.library.types.OnOffType.ON.equals(command);
+      JavaToBacNetConverter<Command> converter =
+        value -> new com.serotonin.bacnet4j.type.primitive.Boolean(outOfService);
+      clientFuture.join().setObjectPropertyValue(object, attribute, command, converter);
+      logger.debug("Command {} for BACnet Out_Of_Service property {} executed successfully", command, object);
+      return;
     } else if (command instanceof ResetCommand) {
       ResetCommand reset = (ResetCommand) command;
       JavaToBacNetConverter<Object> converter = (value) -> Null.instance;
@@ -444,8 +509,9 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
       DeviceChannelConfig config = channel.getConfiguration().as(DeviceChannelConfig.class);
       Long refreshInterval = Optional.ofNullable(config.refreshInterval).filter(value -> value != 0).orElse(getRefreshInterval());
       BacNetObject object = new BacNetObject(device, config.instance, config.type);
+      String propertyIdentifier = resolvePropertyIdentifier(channel, config);
 
-      if (PropertyIdentifier.statusFlags.toString().equals(config.propertyIdentifier)) {
+      if (PropertyIdentifier.statusFlags.toString().equals(propertyIdentifier)) {
         Consumer<Encodable> statusConsumer = value -> updateStatusFlags(channel, value);
         if (pollingEnabled) {
           source.add(refreshInterval, channel.getUID().getAsString(),
@@ -455,7 +521,7 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
         continue;
       }
 
-      if (PropertyIdentifier.eventState.toString().equals(config.propertyIdentifier)) {
+      if (PropertyIdentifier.eventState.toString().equals(propertyIdentifier)) {
         Consumer<Encodable> eventConsumer = value -> updateEventState(channel, value);
         source.add(refreshInterval, channel.getUID().getAsString(),
           new BACnetObjectsSampler(client, object, PropertyIdentifier.eventState.toString(), eventConsumer));
@@ -463,7 +529,7 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
         continue;
       }
 
-      if (PropertyIdentifier.outOfService.toString().equals(config.propertyIdentifier)) {
+      if (PropertyIdentifier.outOfService.toString().equals(propertyIdentifier)) {
         Consumer<Encodable> outOfServiceConsumer = value -> updateOutOfService(channel, value);
         source.add(refreshInterval, channel.getUID().getAsString(),
           new BACnetObjectsSampler(client, object, PropertyIdentifier.outOfService.toString(), outOfServiceConsumer));
@@ -474,9 +540,9 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
       Consumer<Encodable> consumer = new SamplerCallback(CompositeConverter.INSTANCE, new ChannelCallback(getCallback(), channel));
       if (pollingEnabled) {
         source.add(refreshInterval, channel.getUID().getAsString(),
-          new BACnetObjectsSampler(client, object, config.propertyIdentifier, consumer));
+          new BACnetObjectsSampler(client, object, propertyIdentifier, consumer));
       }
-      if (covManager != null && PropertyIdentifier.presentValue.toString().equals(config.propertyIdentifier)) {
+      if (covManager != null && PropertyIdentifier.presentValue.toString().equals(propertyIdentifier)) {
         covManager.add(object, consumer, null, null, null);
       }
     }
