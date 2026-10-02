@@ -1,0 +1,41 @@
+name: Build BACnet units and decimal places R2
+
+on:
+  push:
+    branches:
+      - build/bacnet-units-decimal-places-r2
+  workflow_dispatch:
+
+jobs:
+  build-kar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: connectorio-addons
+      - uses: actions/checkout@v4
+        with:
+          repository: bagaMann/bacnet4j-wrapper
+          ref: stable/bacnet-tested-2026-10-01
+          path: bacnet4j-wrapper
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Install wrapper
+        working-directory: bacnet4j-wrapper
+        run: mvn -U -pl api,ip,mstp -am install -DskipTests
+      - name: Build KAR
+        working-directory: connectorio-addons
+        run: |
+          mvn -U -Popenhab             -pl kars/org.connectorio.addons.kar.bacnet             -am package -DskipTests
+      - name: Verify numeric presentation
+        working-directory: connectorio-addons
+        run: |
+          set -euo pipefail
+          grep -q 'name="decimalPlaces"' bundles/org.connectorio.addons.binding.bacnet/src/main/resources/OH-INF/config/channel-config.xml
+          grep -q 'name="useBacnetUnit"' bundles/org.connectorio.addons.binding.bacnet/src/main/resources/OH-INF/config/channel-config.xml
+          grep -q 'DynamicStateDescriptionProvider' bundles/org.connectorio.addons.binding.bacnet/src/main/java/org/connectorio/addons/binding/bacnet/internal/BACnetStateDescriptionProvider.java
+          grep -q 'PropertyIdentifier.units' bundles/org.connectorio.addons.binding.bacnet/src/main/java/org/connectorio/addons/binding/bacnet/internal/handler/object/BACnetDeviceHandler.java
+          ls -lh kars/org.connectorio.addons.kar.bacnet/target/*.kar
