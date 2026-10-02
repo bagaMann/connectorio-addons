@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import org.code_house.bacnet4j.wrapper.api.BacNetClient;
@@ -41,6 +42,7 @@ import org.code_house.bacnet4j.wrapper.api.Priorities;
 import org.code_house.bacnet4j.wrapper.api.Priority;
 import org.code_house.bacnet4j.wrapper.api.Type;
 import org.connectorio.addons.binding.bacnet.internal.BACnetBindingConstants;
+import org.connectorio.addons.binding.bacnet.internal.BACnetStateDescriptionProvider;
 import org.connectorio.addons.binding.bacnet.internal.command.PrioritizedCommand;
 import org.connectorio.addons.binding.bacnet.internal.command.ResetCommand;
 import org.connectorio.addons.binding.bacnet.internal.config.DeviceChannelConfig;
@@ -86,6 +88,8 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
 
   private final LinkManager linkManager;
   private final SourceFactory sourceFactory;
+  private final BACnetStateDescriptionProvider stateDescriptionProvider;
+  private final Map<String, String> bacnetUnitCache = new ConcurrentHashMap<>();
   private WatchdogManager watchdogManager;
 
   private Device device;
@@ -98,11 +102,13 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
   private BACnetCovManager covManager;
   private BACnetDeviceHealthMonitor healthMonitor;
 
-  public BACnetDeviceHandler(Bridge bridge, LinkManager linkManager, SourceFactory sourceFactory, WatchdogManager watchdogManager) {
+  public BACnetDeviceHandler(Bridge bridge, LinkManager linkManager, SourceFactory sourceFactory,
+      WatchdogManager watchdogManager, BACnetStateDescriptionProvider stateDescriptionProvider) {
     super(bridge);
     this.linkManager = linkManager;
     this.sourceFactory = sourceFactory;
     this.watchdogManager = watchdogManager;
+    this.stateDescriptionProvider = stateDescriptionProvider;
   }
 
   @Override
@@ -335,6 +341,33 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
     return null;
   }
 
+  private void configureChannelPresentation(BacNetClient client, Channel channel, DeviceChannelConfig config,
+      BacNetObject object) {
+    String channelType = channel.getChannelTypeUID() == null ? "" : channel.getChannelTypeUID().getId();
+    if (!"deviceWriteableNumber".equals(channelType) && !"deviceReadableNumber".equals(channelType)) {
+      return;
+    }
+
+    String unit = null;
+    if (config.useBacnetUnit) {
+      String key = config.type.name() + ":" + config.instance;
+      unit = bacnetUnitCache.get(key);
+      if (unit == null) {
+        try {
+          unit = client.getObjectPropertyValue(object, PropertyIdentifier.units.toString(),
+            value -> value == null ? "" : value.toString());
+          if (unit != null) bacnetUnitCache.put(key, unit);
+        } catch (RuntimeException e) {
+          logger.debug("Unable to read BACnet unit for {}", object, e);
+          unit = "";
+        }
+      }
+    }
+
+    stateDescriptionProvider.setNumberFormat(channel.getUID(), config.decimalPlaces, unit,
+      config.useBacnetUnit, isReadOnlyChannel(channel, config));
+  }
+
   private String resolvePropertyIdentifier(Channel channel, DeviceChannelConfig config) {
     String channelType = channel.getChannelTypeUID() == null ? "" : channel.getChannelTypeUID().getId();
 
@@ -506,6 +539,7 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
       DeviceChannelConfig config = channel.getConfiguration().as(DeviceChannelConfig.class);
       Long refreshInterval = Optional.ofNullable(config.refreshInterval).filter(value -> value != 0).orElse(getRefreshInterval());
       BacNetObject object = new BacNetObject(device, config.instance, config.type);
+      configureChannelPresentation(client, channel, config, object);
       String propertyIdentifier = resolvePropertyIdentifier(channel, config);
 
       if (PropertyIdentifier.statusFlags.toString().equals(propertyIdentifier)) {
