@@ -210,6 +210,13 @@
     <config-description-ref uri="thing-type:co7io-bacnet:device-read-only"></config-description-ref>
   </channel-type>
 
+  <channel-type id="deviceWriteableOutOfService">
+    <item-type>Switch</item-type>
+    <label>Out of service</label>
+    <description>BACnet Out_Of_Service property (read/write).</description>
+    <config-description-ref uri="thing-type:co7io-bacnet:device-read-write"></config-description-ref>
+  </channel-type>
+
   <channel-type id="deviceWriteableDateTime">
     <item-type>DateTime</item-type>
     <label>Present value — Date/Time</label>
