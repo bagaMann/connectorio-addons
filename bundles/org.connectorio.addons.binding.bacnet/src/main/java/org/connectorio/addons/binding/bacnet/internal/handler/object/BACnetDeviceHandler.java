@@ -292,9 +292,6 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
     Map<String, Object> properties = new LinkedHashMap<>();
     properties.put("instance", object.getId());
     properties.put("type", object.getType().name());
-    properties.put("readOnly", false);
-    properties.put("propertyIdentifier", propertyIdentifier.toString());
-    properties.put("refreshInterval", 0);
     return new Configuration(properties);
   }
 
