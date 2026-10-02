@@ -65,7 +65,7 @@ Do not change this behavior during the current stability test unless it causes a
 
 ## Channel type to property mapping and write semantics
 
-Status: **next cleanup step — do not change current field-test behavior yet**
+Status: **implemented in cleanup branch — ready for field testing**
 
 The manual channel UI still exposes `propertyIdentifier`, although the selected BACnet channel type already determines which property must be used.
 
@@ -92,6 +92,14 @@ Write semantics:
 
 Current implementation note:
 `DeviceChannelConfig.readOnly` is present but `BACnetDeviceHandler.handleCommand()` does not enforce it. Do not rely on the current readOnly field as command protection. When this cleanup is implemented, read/write behavior should be explicit in channel types/handler logic.
+
+Implementation completed:
+- manual channel property selection removed from the UI;
+- exposed channel type now determines the BACnet property internally;
+- Status Flags and Event State writes are rejected by the handler;
+- a new read/write Out Of Service channel type is exposed;
+- Out Of Service writes use BACnet primitive Boolean conversion;
+- legacy read-only Out Of Service channel type remains available internally for compatibility.
 
 Refresh interval semantics to preserve:
 - A non-zero channel `refreshInterval` overrides the device/bridge polling interval for that channel.
