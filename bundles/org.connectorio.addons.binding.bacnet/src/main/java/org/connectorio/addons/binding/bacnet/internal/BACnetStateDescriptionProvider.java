@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.core.events.EventPublisher;
 import org.openhab.core.thing.Channel;
 import org.openhab.core.thing.ChannelUID;
@@ -40,13 +39,13 @@ public class BACnetStateDescriptionProvider extends BaseDynamicStateDescriptionP
   }
 
   @Override
-  public @Nullable StateDescription getStateDescription(Channel channel, @Nullable StateDescription original,
-      @Nullable Locale locale) {
+  public StateDescription getStateDescription(Channel channel, StateDescription original,
+      Locale locale) {
     StateDescriptionFragment fragment = fragments.get(channel.getUID());
     return fragment != null ? fragment.toStateDescription() : super.getStateDescription(channel, original, locale);
   }
 
-  public void setNumberFormat(ChannelUID channelUID, int decimalPlaces, @Nullable String bacnetUnit,
+  public void setNumberFormat(ChannelUID channelUID, int decimalPlaces, String bacnetUnit,
       boolean useBacnetUnit, boolean readOnly) {
     int places = Math.max(0, Math.min(6, decimalPlaces));
     String unit = useBacnetUnit ? displayUnit(bacnetUnit) : "";
@@ -71,7 +70,7 @@ public class BACnetStateDescriptionProvider extends BaseDynamicStateDescriptionP
     return unit.replace("%", "%%");
   }
 
-  private static String displayUnit(@Nullable String unit) {
+  private static String displayUnit(String unit) {
     if (unit == null || unit.isBlank()) return "";
     String normalized = unit.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "");
 
