@@ -1,0 +1,55 @@
+name: Build BACnet clean channel config
+
+on:
+  push:
+    branches:
+      - build/bacnet-clean-channel-config
+  workflow_dispatch:
+
+jobs:
+  build-kar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout ConnectorIO
+        uses: actions/checkout@v4
+        with:
+          path: connectorio-addons
+
+      - name: Checkout tested BACnet4J wrapper
+        uses: actions/checkout@v4
+        with:
+          repository: bagaMann/bacnet4j-wrapper
+          ref: stable/bacnet-tested-2026-10-01
+          path: bacnet4j-wrapper
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Install BACnet4J wrapper
+        working-directory: bacnet4j-wrapper
+        run: mvn -U -pl api,ip,mstp -am install -DskipTests
+
+      - name: Build BACnet KAR
+        working-directory: connectorio-addons
+        run: |
+          mvn -U -Popenhab \
+            -pl kars/org.connectorio.addons.kar.bacnet \
+            -am package -DskipTests
+
+      - name: Verify clean channel configuration
+        working-directory: connectorio-addons
+        run: |
+          set -euo pipefail
+          DEV=bundles/org.connectorio.addons.binding.bacnet/src/main/java/org/connectorio/addons/binding/bacnet/internal/handler/object/BACnetDeviceHandler.java
+          CFG=bundles/org.connectorio.addons.binding.bacnet/src/main/java/org/connectorio/addons/binding/bacnet/internal/config/DeviceChannelConfig.java
+          CH=bundles/org.connectorio.addons.binding.bacnet/src/main/resources/OH-INF/thing/channels.xml
+
+          ! grep -A8 'private Configuration channelConfiguration' "$DEV" | grep -q 'propertyIdentifier'
+          ! grep -A8 'private Configuration channelConfiguration' "$DEV" | grep -q 'readOnly'
+          grep -q 'refreshInterval = 0L' "$CFG"
+          grep -q '<state pattern="%.2f"/>' "$CH"
+          ls -lh kars/org.connectorio.addons.kar.bacnet/target/*.kar
