@@ -1,0 +1,57 @@
+name: Build BACnet units and decimal places
+
+on:
+  push:
+    branches:
+      - build/bacnet-units-decimal-places
+  workflow_dispatch:
+
+jobs:
+  build-kar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout ConnectorIO
+        uses: actions/checkout@v4
+        with:
+          path: connectorio-addons
+
+      - name: Checkout tested BACnet4J wrapper
+        uses: actions/checkout@v4
+        with:
+          repository: bagaMann/bacnet4j-wrapper
+          ref: stable/bacnet-tested-2026-10-01
+          path: bacnet4j-wrapper
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Install BACnet4J wrapper
+        working-directory: bacnet4j-wrapper
+        run: mvn -U -pl api,ip,mstp -am install -DskipTests
+
+      - name: Build BACnet KAR
+        working-directory: connectorio-addons
+        run: |
+          mvn -U -Popenhab             -pl kars/org.connectorio.addons.kar.bacnet             -am package -DskipTests
+
+      - name: Verify BACnet numeric presentation
+        working-directory: connectorio-addons
+        run: |
+          set -euo pipefail
+          CFG=bundles/org.connectorio.addons.binding.bacnet/src/main/resources/OH-INF/config/channel-config.xml
+          CH=bundles/org.connectorio.addons.binding.bacnet/src/main/resources/OH-INF/thing/channels.xml
+          DEV=bundles/org.connectorio.addons.binding.bacnet/src/main/java/org/connectorio/addons/binding/bacnet/internal/handler/object/BACnetDeviceHandler.java
+          PROVIDER=bundles/org.connectorio.addons.binding.bacnet/src/main/java/org/connectorio/addons/binding/bacnet/internal/BACnetStateDescriptionProvider.java
+
+          grep -q 'name="decimalPlaces"' "$CFG"
+          grep -q 'name="useBacnetUnit"' "$CFG"
+          grep -q 'device-number-read-write' "$CH"
+          grep -q 'DynamicStateDescriptionProvider' "$PROVIDER"
+          grep -q 'PropertyIdentifier.units' "$DEV"
+          grep -q 'setNumberFormat' "$DEV"
+
+          ls -lh kars/org.connectorio.addons.kar.bacnet/target/*.kar
