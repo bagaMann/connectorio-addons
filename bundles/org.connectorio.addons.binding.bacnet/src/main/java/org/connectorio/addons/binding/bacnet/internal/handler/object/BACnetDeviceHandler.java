@@ -434,7 +434,7 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
 
       boolean outOfService = org.openhab.core.library.types.OnOffType.ON.equals(command);
       JavaToBacNetConverter<Command> converter =
-        value -> new com.serotonin.bacnet4j.type.primitive.Boolean(outOfService);
+        value -> com.serotonin.bacnet4j.type.primitive.Boolean.valueOf(outOfService);
       clientFuture.join().setObjectPropertyValue(object, attribute, command, converter);
       logger.debug("Command {} for BACnet Out_Of_Service property {} executed successfully", command, object);
       return;
