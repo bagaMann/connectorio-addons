@@ -61,3 +61,39 @@ A later, more invasive optimization could update only the affected channel/objec
 - No continuous subscription storm after initialization.
 
 Do not change this behavior during the current stability test unless it causes an operational problem.
+
+
+## Channel type to property mapping and write semantics
+
+Status: **next cleanup step — do not change current field-test behavior yet**
+
+The manual channel UI still exposes `propertyIdentifier`, although the selected BACnet channel type already determines which property must be used.
+
+Desired fixed mapping:
+
+```text
+Present value — Binary    -> present-value
+Present value — Number    -> present-value
+Present value — Date/Time -> present-value
+Present value — Text      -> present-value
+Status flags              -> status-flags
+Event state               -> event-state
+Out of service            -> out-of-service
+```
+
+The UI should require only the channel type, BACnet object instance and BACnet object type for this part of configuration. The property identifier should be supplied internally from the channel type and must not be user-selectable.
+
+Write semantics:
+- Status flags: read-only.
+- Event state: read-only.
+- Out of service: read/write.
+- Present value channel variants remain read/write where the BACnet object permits writing.
+
+Current implementation note:
+`DeviceChannelConfig.readOnly` is present but `BACnetDeviceHandler.handleCommand()` does not enforce it. Do not rely on the current readOnly field as command protection. When this cleanup is implemented, read/write behavior should be explicit in channel types/handler logic.
+
+Refresh interval semantics to preserve:
+- A non-zero channel `refreshInterval` overrides the device/bridge polling interval for that channel.
+- A zero channel interval falls back to the device refresh interval, then bridge refresh interval, then the BACnet default polling interval.
+- In COV-only mode, Present_Value and Status_Flags are not periodically polled, so their refresh interval does not drive regular updates.
+- Event_State and Out_Of_Service are intentionally polled even in COV-only mode with the current implementation, because the tested IQ3 object-level COV does not reliably provide those properties.
