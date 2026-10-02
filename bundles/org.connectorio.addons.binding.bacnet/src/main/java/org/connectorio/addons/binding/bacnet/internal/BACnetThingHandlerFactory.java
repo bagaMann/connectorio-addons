@@ -50,15 +50,18 @@ public class BACnetThingHandlerFactory extends BaseThingHandlerFactory implement
   private final LinkManager linkManager;
   private final WatchdogManager watchdogManager;
   private final SourceFactory sourceFactory;
+  private final BACnetStateDescriptionProvider stateDescriptionProvider;
 
   @Activate
   public BACnetThingHandlerFactory(@Reference SerialPortManager serialPortManager, @Reference LinkManager linkManager,
       @Reference(target = "(default=true)") SourceFactory sourceFactory,
-      @Reference WatchdogManager watchdogManager) {
+      @Reference WatchdogManager watchdogManager,
+      @Reference BACnetStateDescriptionProvider stateDescriptionProvider) {
     this.serialPortManager = serialPortManager;
     this.linkManager = linkManager;
     this.sourceFactory = sourceFactory;
     this.watchdogManager = watchdogManager;
+    this.stateDescriptionProvider = stateDescriptionProvider;
   }
 
   @Override
@@ -67,9 +70,9 @@ public class BACnetThingHandlerFactory extends BaseThingHandlerFactory implement
 
     if (thing instanceof Bridge) {
       if (IP_DEVICE_THING_TYPE.equals(thingTypeUID)) {
-        return new BACnetIpDeviceHandler((Bridge) thing, linkManager, sourceFactory, watchdogManager);
+        return new BACnetIpDeviceHandler((Bridge) thing, linkManager, sourceFactory, watchdogManager, stateDescriptionProvider);
       } else if (MSTP_DEVICE_THING_TYPE.equals(thingTypeUID)) {
-          return new BACnetMstpDeviceHandler((Bridge) thing, linkManager, sourceFactory, watchdogManager);
+          return new BACnetMstpDeviceHandler((Bridge) thing, linkManager, sourceFactory, watchdogManager, stateDescriptionProvider);
       } else if (IPV4_BRIDGE_THING_TYPE.equals(thingTypeUID)) {
         return new BACnetIpv4BridgeHandler((Bridge) thing);
 //      } else if (IPV6_BRIDGE_THING_TYPE.equals(thingTypeUID)) {
