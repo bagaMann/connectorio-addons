@@ -23,6 +23,7 @@ package org.connectorio.addons.binding.bacnet.internal.handler.object;
 
 import org.code_house.bacnet4j.wrapper.api.Device;
 import org.code_house.bacnet4j.wrapper.device.mstp.MstpDevice;
+import org.connectorio.addons.binding.bacnet.internal.BACnetStateDescriptionProvider;
 import org.connectorio.addons.binding.bacnet.internal.config.MstpDeviceConfig;
 import org.connectorio.addons.binding.source.SourceFactory;
 import org.connectorio.addons.communication.watchdog.WatchdogManager;
@@ -40,8 +41,9 @@ public class BACnetMstpDeviceHandler extends BACnetDeviceHandler<MstpDeviceConfi
    * @param sourceFactory source factory used to sample BACnet devices
    * @param watchdogManager communication watchdog
    */
-  public BACnetMstpDeviceHandler(Bridge bridge, LinkManager linkManager, SourceFactory sourceFactory, WatchdogManager watchdogManager) {
-    super(bridge, linkManager, sourceFactory, watchdogManager);
+  public BACnetMstpDeviceHandler(Bridge bridge, LinkManager linkManager, SourceFactory sourceFactory,
+      WatchdogManager watchdogManager, BACnetStateDescriptionProvider stateDescriptionProvider) {
+    super(bridge, linkManager, sourceFactory, watchdogManager, stateDescriptionProvider);
   }
 
   @Override
