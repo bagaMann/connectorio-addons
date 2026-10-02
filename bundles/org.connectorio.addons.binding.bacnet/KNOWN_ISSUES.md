@@ -87,6 +87,7 @@ Write semantics:
 - Status flags: read-only.
 - Event state: read-only.
 - Out of service: read/write.
+  - Implement a property-specific BACnet Boolean conversion for writes. The current generic write path converts commands using the BACnet object type, which is appropriate for Present_Value but not for Out_Of_Service.
 - Present value channel variants remain read/write where the BACnet object permits writing.
 
 Current implementation note:
