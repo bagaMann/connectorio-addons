@@ -151,7 +151,7 @@
     <item-type>Number</item-type>
     <label>Present value — Number</label>
     <state pattern="%.2f"/>
-    <config-description-ref uri="thing-type:co7io-bacnet:device-read-write"></config-description-ref>
+    <config-description-ref uri="thing-type:co7io-bacnet:device-number-read-write"></config-description-ref>
   </channel-type>
 
   <channel-type id="deviceReadableNumber">
