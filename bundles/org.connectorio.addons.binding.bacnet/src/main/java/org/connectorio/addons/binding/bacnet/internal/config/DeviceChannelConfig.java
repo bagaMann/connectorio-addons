@@ -26,6 +26,13 @@ import org.connectorio.addons.binding.config.PollingConfiguration;
 
 public class DeviceChannelConfig extends PollingConfiguration {
 
+  public DeviceChannelConfig() {
+    // Zero means: inherit the polling interval from the BACnet device/bridge.
+    // PollingConfiguration defaults to 1000 ms, which is not appropriate for
+    // manually-created BACnet channels whose UI default is zero.
+    refreshInterval = 0L;
+  }
+
   public int instance;
   public Type type;
   public String propertyIdentifier;
