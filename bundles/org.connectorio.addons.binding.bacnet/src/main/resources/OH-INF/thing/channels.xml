@@ -150,12 +150,14 @@
   <channel-type id="deviceWriteableNumber">
     <item-type>Number</item-type>
     <label>Present value — Number</label>
+    <state pattern="%.2f"/>
     <config-description-ref uri="thing-type:co7io-bacnet:device-read-write"></config-description-ref>
   </channel-type>
 
   <channel-type id="deviceReadableNumber">
     <item-type>Number</item-type>
     <label>Present value</label>
+    <state pattern="%.2f" readOnly="true"/>
     <config-description-ref uri="thing-type:co7io-bacnet:device-read-only"></config-description-ref>
   </channel-type>
 
