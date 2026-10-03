@@ -1,0 +1,69 @@
+uid: bacnet_weekly_schedule_view
+tags:
+  - bacnet
+  - schedule
+props:
+  parameters:
+    - context: item
+      description: WeekSchedule Item linked to the BACnet Weekly schedule channel
+      label: Schedule Item
+      name: item
+      required: true
+      type: TEXT
+    - default: BACnet Weekly Schedule
+      description: Widget title
+      label: Title
+      name: title
+      required: false
+      type: TEXT
+  parameterGroups: []
+component: f7-card
+config:
+  title: =props.title || 'BACnet Weekly Schedule'
+slots:
+  default:
+    - component: oh-list
+      config:
+        mediaList: false
+      slots:
+        default:
+          - component: oh-list-item
+            config:
+              title: Понедельник
+              after: '=JSON.parse(items[props.item].state).MONDAY.map((x) => Object.keys(x)[0].substring(0,5) + " " + x[Object.keys(x)[0]]).join(" · ")'
+              visible: '=items[props.item] && items[props.item].state != "NULL" && items[props.item].state != "UNDEF" && items[props.item].state.startsWith("{")'
+          - component: oh-list-item
+            config:
+              title: Вторник
+              after: '=JSON.parse(items[props.item].state).TUESDAY.map((x) => Object.keys(x)[0].substring(0,5) + " " + x[Object.keys(x)[0]]).join(" · ")'
+              visible: '=items[props.item] && items[props.item].state != "NULL" && items[props.item].state != "UNDEF" && items[props.item].state.startsWith("{")'
+          - component: oh-list-item
+            config:
+              title: Среда
+              after: '=JSON.parse(items[props.item].state).WEDNESDAY.map((x) => Object.keys(x)[0].substring(0,5) + " " + x[Object.keys(x)[0]]).join(" · ")'
+              visible: '=items[props.item] && items[props.item].state != "NULL" && items[props.item].state != "UNDEF" && items[props.item].state.startsWith("{")'
+          - component: oh-list-item
+            config:
+              title: Четверг
+              after: '=JSON.parse(items[props.item].state).THURSDAY.map((x) => Object.keys(x)[0].substring(0,5) + " " + x[Object.keys(x)[0]]).join(" · ")'
+              visible: '=items[props.item] && items[props.item].state != "NULL" && items[props.item].state != "UNDEF" && items[props.item].state.startsWith("{")'
+          - component: oh-list-item
+            config:
+              title: Пятница
+              after: '=JSON.parse(items[props.item].state).FRIDAY.map((x) => Object.keys(x)[0].substring(0,5) + " " + x[Object.keys(x)[0]]).join(" · ")'
+              visible: '=items[props.item] && items[props.item].state != "NULL" && items[props.item].state != "UNDEF" && items[props.item].state.startsWith("{")'
+          - component: oh-list-item
+            config:
+              title: Суббота
+              after: '=JSON.parse(items[props.item].state).SATURDAY.map((x) => Object.keys(x)[0].substring(0,5) + " " + x[Object.keys(x)[0]]).join(" · ")'
+              visible: '=items[props.item] && items[props.item].state != "NULL" && items[props.item].state != "UNDEF" && items[props.item].state.startsWith("{")'
+          - component: oh-list-item
+            config:
+              title: Воскресенье
+              after: '=JSON.parse(items[props.item].state).SUNDAY.map((x) => Object.keys(x)[0].substring(0,5) + " " + x[Object.keys(x)[0]]).join(" · ")'
+              visible: '=items[props.item] && items[props.item].state != "NULL" && items[props.item].state != "UNDEF" && items[props.item].state.startsWith("{")'
+          - component: oh-list-item
+            config:
+              title: Расписание недоступно
+              subtitle: '=items[props.item] ? items[props.item].state : "Item not selected"'
+              visible: '=!items[props.item] || items[props.item].state == "NULL" || items[props.item].state == "UNDEF" || !items[props.item].state.startsWith("{")'
