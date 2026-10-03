@@ -1,0 +1,41 @@
+name: Build BACnet composer multicallback
+
+on:
+  push:
+    branches:
+      - build/bacnet-composer-multicallback
+  workflow_dispatch:
+
+jobs:
+  build-kar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: connectorio-addons
+      - uses: actions/checkout@v4
+        with:
+          repository: bagaMann/bacnet4j-wrapper
+          ref: stable/bacnet-tested-2026-10-01
+          path: bacnet4j-wrapper
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Install wrapper
+        working-directory: bacnet4j-wrapper
+        run: mvn -U -pl api,ip,mstp -am install -DskipTests
+      - name: Build BACnet KAR
+        working-directory: connectorio-addons
+        run: |
+          mvn -U -Popenhab             -pl kars/org.connectorio.addons.kar.bacnet             -am package -DskipTests
+      - name: Verify merged callback fanout
+        working-directory: connectorio-addons
+        run: |
+          set -euo pipefail
+          C=bundles/org.connectorio.addons.binding.bacnet/src/main/java/org/connectorio/addons/binding/bacnet/internal/handler/source/BACnetSamplerComposer.java
+          grep -q 'boolean hasMergedSample = false' "$C"
+          grep -q 'consumers.add(sampler.getCallback())' "$C"
+          grep -q 'computeIfAbsent' "$C"
+          ls -lh kars/org.connectorio.addons.kar.bacnet/target/*.kar
