@@ -23,6 +23,7 @@ package org.connectorio.addons.binding.bacnet.internal.handler.object;
 
 import com.serotonin.bacnet4j.obj.BACnetObject;
 import com.serotonin.bacnet4j.type.Encodable;
+import com.serotonin.bacnet4j.type.enumerated.PropertyIdentifier;
 import com.serotonin.bacnet4j.type.primitive.Null;
 import java.util.Optional;
 import java.util.Set;
@@ -55,6 +56,8 @@ import org.connectorio.addons.binding.bacnet.internal.handler.source.SamplerCall
 import org.connectorio.addons.binding.handler.polling.common.BasePollingThingHandler;
 import org.connectorio.addons.binding.source.SourceFactory;
 import org.connectorio.addons.binding.source.sampling.SamplingSource;
+import org.connectorio.addons.temporal.WeeklyScheduleType;
+import org.openhab.core.library.types.StringType;
 import org.openhab.core.thing.Channel;
 import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.Thing;
@@ -240,7 +243,11 @@ public class BACnetObjectThingHandler<T extends BACnetObject, B extends BACnetDe
         command = prioritizedCmd.getCommand();
       }
       JavaToBacNetConverter<Command> converter = (value) -> {
-        Encodable encodable = BACnetValueConverter.openHabTypeToBacNetValue(type.getBacNetType(), value);
+        Command convertedValue = value;
+        if (PropertyIdentifier.weeklySchedule.toString().equals(attribute) && value instanceof StringType) {
+          convertedValue = new WeeklyScheduleType(value.toString());
+        }
+        Encodable encodable = BACnetValueConverter.openHabTypeToBacNetValue(type.getBacNetType(), convertedValue);
         logger.trace("Command have been converter to BACnet value {} of type {}", encodable, encodable.getClass());
         return encodable;
       };
