@@ -141,46 +141,50 @@ slots:
               fragment: true
             slots:
               default:
-                - component: f7-list-item
+                - component: f7-block
                   config:
-                    title: '="Точка " + (entry_idx + 1)'
+                    style:
+                      display: flex
+                      align-items: center
+                      gap: 8px
+                      margin-top: 6px
+                      margin-bottom: 6px
+                      padding-left: 0
+                      padding-right: 0
                   slots:
-                    after:
-                      - component: f7-block
+                    default:
+                      - component: Label
                         config:
+                          text: '="Точка " + (loop.entry_idx + 1)'
                           style:
-                            display: flex
-                            align-items: center
-                            gap: 6px
-                            margin: 0
-                            padding: 0
-                        slots:
-                          default:
-                            - component: oh-input
-                              config:
-                                type: text
-                                placeholder: HH:mm:ss
-                                variable: entries
-                                variableKey: "='[' + entry_idx + '].time'"
-                                style:
-                                  width: 95px
-                            - component: oh-input
-                              config:
-                                type: text
-                                placeholder: ON/OFF или число
-                                variable: entries
-                                variableKey: "='[' + entry_idx + '].value'"
-                                style:
-                                  width: 120px
-                            - component: oh-button
-                              config:
-                                iconF7: trash
-                                small: true
-                                color: red
-                                action: variable
-                                actionVariable: entries
-                                actionVariableValue: >-
-                                  =vars.entries.filter((x, i) => i != entry_idx)
+                            min-width: 70px
+                      - component: oh-input
+                        config:
+                          type: text
+                          placeholder: HH:mm:ss
+                          variable: entries
+                          variableKey: "='[' + loop.entry_idx + '].time'"
+                          defaultValue: =loop.entry.time
+                          style:
+                            width: 105px
+                      - component: oh-input
+                        config:
+                          type: text
+                          placeholder: ON/OFF или число
+                          variable: entries
+                          variableKey: "='[' + loop.entry_idx + '].value'"
+                          defaultValue: =loop.entry.value
+                          style:
+                            width: 130px
+                      - component: oh-button
+                        config:
+                          iconF7: trash
+                          small: true
+                          color: red
+                          action: variable
+                          actionVariable: entries
+                          actionVariableValue: >-
+                            =vars.entries.filter((x, i) => i != loop.entry_idx)
 
     - component: f7-block
       config:
