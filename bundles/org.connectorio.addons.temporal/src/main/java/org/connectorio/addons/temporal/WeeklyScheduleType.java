@@ -128,39 +128,7 @@ public class WeeklyScheduleType implements Command, State {
 
   @Override
   public String format(String pattern) {
-    return toDisplayString();
-  }
-
-  public String toDisplayString() {
-    StringBuilder str = new StringBuilder();
-    String[] days = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
-
-    for (int index = 0; index < weekSchedule.length; index++) {
-      if (index > 0) {
-        str.append(" | ");
-      }
-
-      str.append(days[index]).append(": ");
-      DayScheduleType day = weekSchedule[index];
-      if (day == null || day.getDaySchedule().isEmpty()) {
-        str.append("—");
-        continue;
-      }
-
-      boolean first = true;
-      for (java.util.Map.Entry<LocalTimeType, State> entry : day.getDaySchedule().entrySet()) {
-        if (!first) {
-          str.append(" · ");
-        }
-        LocalTimeType time = entry.getKey();
-        str.append(String.format("%02d:%02d", time.getTime().getHour(), time.getTime().getMinute()))
-          .append(" ")
-          .append(entry.getValue().toFullString());
-        first = false;
-      }
-    }
-
-    return str.toString();
+    return toFullString();
   }
 
   @Override
