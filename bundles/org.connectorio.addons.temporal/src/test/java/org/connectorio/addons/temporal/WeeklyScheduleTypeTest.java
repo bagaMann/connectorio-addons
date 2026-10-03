@@ -37,6 +37,12 @@ class WeeklyScheduleTypeTest {
 
     WeeklyScheduleType reconstructed = new WeeklyScheduleType(string);
     assertThat(reconstructed).isNotNull().isEqualTo(schedule);
+
+    assertThat(string)
+      .contains("],\"TUESDAY\":[")
+      .contains("],\"WEDNESDAY\":[")
+      .contains("],\"SUNDAY\":[")
+      .doesNotContain("]\"TUESDAY\"");
   }
 
   @Test
