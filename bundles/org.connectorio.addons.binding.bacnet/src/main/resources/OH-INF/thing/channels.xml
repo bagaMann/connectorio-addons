@@ -249,19 +249,10 @@
     <config-description-ref uri="thing-type:co7io-bacnet:device-read-write"></config-description-ref>
   </channel-type>
 
-  <channel-type id="deviceReadableWeekScheduleView">
-    <item-type>String</item-type>
-    <label>Weekly schedule view</label>
-    <description>Human-readable view of the BACnet Weekly_Schedule property.</description>
-    <state readOnly="true" pattern="%s"/>
-    <config-description-ref uri="thing-type:co7io-bacnet:device-week-schedule-read-only"></config-description-ref>
-  </channel-type>
-
   <channel-type id="deviceWriteableWeekSchedule">
     <item-type>WeekSchedule</item-type>
     <label>Weekly schedule</label>
     <description>BACnet Weekly_Schedule property (read/write).</description>
-    <state pattern="%s"/>
     <config-description-ref uri="thing-type:co7io-bacnet:device-week-schedule-read-write"></config-description-ref>
   </channel-type>
 
