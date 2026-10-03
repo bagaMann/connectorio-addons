@@ -368,6 +368,14 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
       config.useBacnetUnit, isReadOnlyChannel(channel, config));
   }
 
+  private Type resolveObjectType(Channel channel, DeviceChannelConfig config) {
+    String channelType = channel.getChannelTypeUID() == null ? "" : channel.getChannelTypeUID().getId();
+    if ("deviceWriteableWeekSchedule".equals(channelType)) {
+      return Type.SCHEDULE;
+    }
+    return config.type;
+  }
+
   private String resolvePropertyIdentifier(Channel channel, DeviceChannelConfig config) {
     String channelType = channel.getChannelTypeUID() == null ? "" : channel.getChannelTypeUID().getId();
 
@@ -388,6 +396,8 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
       case "deviceWriteableOutOfService":
       case "deviceReadableOutOfService":
         return PropertyIdentifier.outOfService.toString();
+      case "deviceWriteableWeekSchedule":
+        return PropertyIdentifier.weeklySchedule.toString();
       default:
         return Optional.ofNullable(config.propertyIdentifier)
           .filter(value -> !value.trim().isEmpty())
@@ -412,6 +422,7 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
       case "deviceWriteableDateTime":
       case "deviceWriteableText":
       case "deviceWriteableOutOfService":
+      case "deviceWriteableWeekSchedule":
         return false;
       default:
         return config.readOnly;
@@ -432,7 +443,7 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
     final CompletableFuture<BacNetClient> clientFuture = getBridgeHandler().get().getClient();
     Channel channel = getThing().getChannel(channelUID);
     DeviceChannelConfig config = channel.getConfiguration().as(DeviceChannelConfig.class);
-    BacNetObject object = new BacNetObject(device, config.instance, config.type);
+    BacNetObject object = new BacNetObject(device, config.instance, resolveObjectType(channel, config));
     String attribute = resolvePropertyIdentifier(channel, config);
 
     if (command == RefreshType.REFRESH) {
@@ -538,7 +549,7 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
 
       DeviceChannelConfig config = channel.getConfiguration().as(DeviceChannelConfig.class);
       Long refreshInterval = Optional.ofNullable(config.refreshInterval).filter(value -> value != 0).orElse(getRefreshInterval());
-      BacNetObject object = new BacNetObject(device, config.instance, config.type);
+      BacNetObject object = new BacNetObject(device, config.instance, resolveObjectType(channel, config));
       configureChannelPresentation(client, channel, config, object);
       String propertyIdentifier = resolvePropertyIdentifier(channel, config);
 
@@ -565,6 +576,14 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
         source.add(refreshInterval, channel.getUID().getAsString(),
           new BACnetObjectsSampler(client, object, PropertyIdentifier.outOfService.toString(), outOfServiceConsumer));
         if (covManager != null) covManager.add(object, null, null, null, outOfServiceConsumer);
+        continue;
+      }
+
+      if (PropertyIdentifier.weeklySchedule.toString().equals(propertyIdentifier)) {
+        Consumer<Encodable> scheduleConsumer = new SamplerCallback(CompositeConverter.INSTANCE,
+          new ChannelCallback(getCallback(), channel));
+        source.add(refreshInterval, channel.getUID().getAsString(),
+          new BACnetObjectsSampler(client, object, PropertyIdentifier.weeklySchedule.toString(), scheduleConsumer));
         continue;
       }
 
