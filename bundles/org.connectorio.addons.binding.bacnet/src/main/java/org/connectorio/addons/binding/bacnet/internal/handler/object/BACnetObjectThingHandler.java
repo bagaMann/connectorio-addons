@@ -247,7 +247,13 @@ public class BACnetObjectThingHandler<T extends BACnetObject, B extends BACnetDe
         if (PropertyIdentifier.weeklySchedule.toString().equals(attribute) && value instanceof StringType) {
           convertedValue = new WeeklyScheduleType(value.toString());
         }
-        Encodable encodable = BACnetValueConverter.openHabTypeToBacNetValue(type.getBacNetType(), convertedValue);
+        Encodable encodable;
+        if (PropertyIdentifier.weeklySchedule.toString().equals(attribute) && convertedValue instanceof WeeklyScheduleType) {
+          Encodable currentSchedule = clientFuture.join().getObjectPropertyValue(object, attribute, schedule -> schedule);
+          encodable = BACnetValueConverter.openHabScheduleToBacNetValue((WeeklyScheduleType) convertedValue, currentSchedule);
+        } else {
+          encodable = BACnetValueConverter.openHabTypeToBacNetValue(type.getBacNetType(), convertedValue);
+        }
         logger.trace("Command have been converter to BACnet value {} of type {}", encodable, encodable.getClass());
         return encodable;
       };

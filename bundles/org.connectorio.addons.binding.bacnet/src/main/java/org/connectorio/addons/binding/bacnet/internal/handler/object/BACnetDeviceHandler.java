@@ -506,6 +506,10 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
         if (PropertyIdentifier.weeklySchedule.toString().equals(attribute) && value instanceof StringType) {
           convertedValue = new WeeklyScheduleType(value.toString());
         }
+        if (PropertyIdentifier.weeklySchedule.toString().equals(attribute) && convertedValue instanceof WeeklyScheduleType) {
+          Encodable currentSchedule = clientFuture.join().getObjectPropertyValue(object, attribute, schedule -> schedule);
+          return BACnetValueConverter.openHabScheduleToBacNetValue((WeeklyScheduleType) convertedValue, currentSchedule);
+        }
         return BACnetValueConverter.openHabTypeToBacNetValue(object.getType().getBacNetType(), convertedValue);
       };
       if (priority == null) clientFuture.join().setObjectPropertyValue(object, attribute, command, converter);

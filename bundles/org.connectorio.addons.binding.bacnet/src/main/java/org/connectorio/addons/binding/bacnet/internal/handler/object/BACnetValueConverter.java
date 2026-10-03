@@ -153,23 +153,53 @@ public class BACnetValueConverter {
   }
 
   private static Encodable encodeSchedule(WeeklyScheduleType value) {
+    return encodeSchedule(value, false);
+  }
+
+  public static Encodable openHabScheduleToBacNetValue(WeeklyScheduleType value, Encodable currentSchedule) {
+    if (!(currentSchedule instanceof BACnetArray<?>)) {
+      throw new IllegalArgumentException("Cannot determine value type from BACnet weekly schedule " + currentSchedule);
+    }
+    java.lang.Boolean booleanValues = null;
+    for (Encodable day : (BACnetArray<?>) currentSchedule) {
+      if (!(day instanceof DailySchedule)) {
+        throw new IllegalArgumentException("Unexpected BACnet daily schedule " + day);
+      }
+      for (TimeValue slot : ((DailySchedule) day).getDaySchedule()) {
+        if (slot.getValue() instanceof Null) {
+          continue;
+        }
+        boolean booleanValue = slot.getValue() instanceof com.serotonin.bacnet4j.type.primitive.Boolean;
+        if (booleanValues != null && booleanValues.booleanValue() != booleanValue) {
+          throw new IllegalArgumentException("BACnet weekly schedule contains inconsistent value types");
+        }
+        booleanValues = booleanValue;
+      }
+    }
+    return encodeSchedule(value, java.lang.Boolean.TRUE.equals(booleanValues));
+  }
+
+  private static Encodable encodeSchedule(WeeklyScheduleType value, boolean booleanValues) {
     return new BACnetArray<DailySchedule>(
-      encodeDailySchedule(value.getMondaySchedule()),
-      encodeDailySchedule(value.getTuesdaySchedule()),
-      encodeDailySchedule(value.getWednesdaySchedule()),
-      encodeDailySchedule(value.getThursdaySchedule()),
-      encodeDailySchedule(value.getFridaySchedule()),
-      encodeDailySchedule(value.getSaturdaySchedule()),
-      encodeDailySchedule(value.getSundaySchedule())
+      encodeDailySchedule(value.getMondaySchedule(), booleanValues),
+      encodeDailySchedule(value.getTuesdaySchedule(), booleanValues),
+      encodeDailySchedule(value.getWednesdaySchedule(), booleanValues),
+      encodeDailySchedule(value.getThursdaySchedule(), booleanValues),
+      encodeDailySchedule(value.getFridaySchedule(), booleanValues),
+      encodeDailySchedule(value.getSaturdaySchedule(), booleanValues),
+      encodeDailySchedule(value.getSundaySchedule(), booleanValues)
     );
   }
 
-  private static DailySchedule encodeDailySchedule(DayScheduleType daySchedule) {
+  private static DailySchedule encodeDailySchedule(DayScheduleType daySchedule, boolean booleanValues) {
     ArrayList<TimeValue> slots = new ArrayList<>();
     for (Entry<LocalTimeType, State> entry : daySchedule.getDaySchedule().entrySet()) {
       LocalTime time = entry.getKey().getTime();
       slots.add(new TimeValue(new Time(time.getHour(), time.getMinute(), time.getSecond(), time.getNano() / 10_000_000),
-        openHabTypeToBacNetPrimitive(entry.getValue())
+        booleanValues && (entry.getValue() instanceof OnOffType || entry.getValue() instanceof OpenClosedType)
+          ? com.serotonin.bacnet4j.type.primitive.Boolean.valueOf(
+              OnOffType.ON.equals(entry.getValue()) || OpenClosedType.OPEN.equals(entry.getValue()))
+          : openHabTypeToBacNetPrimitive(entry.getValue())
       ));
     }
     return new DailySchedule(new SequenceOf<>(slots));
