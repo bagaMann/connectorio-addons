@@ -1,0 +1,253 @@
+uid: bacnet_weekly_schedule_editor
+tags:
+  - bacnet
+  - schedule
+  - editor
+props:
+  parameters:
+    - context: item
+      description: WeekSchedule Item linked to the BACnet Weekly schedule channel
+      label: Schedule Item
+      name: item
+      required: true
+      type: TEXT
+    - default: BACnet Weekly Schedule Editor
+      description: Widget title
+      label: Title
+      name: title
+      required: false
+      type: TEXT
+  parameterGroups: []
+component: f7-card
+config:
+  title: =props.title || 'BACnet Weekly Schedule Editor'
+slots:
+  default:
+    - component: f7-block
+      config:
+        style:
+          display: flex
+          flex-wrap: wrap
+          gap: 6px
+          margin-top: 8px
+          margin-bottom: 8px
+      slots:
+        default:
+          - component: oh-button
+            config:
+              text: Пн
+              small: true
+              outline: true
+              active: "=(vars.day || 'MONDAY') == 'MONDAY'"
+              action: variable
+              actionVariable: day
+              actionVariableValue: MONDAY
+          - component: oh-button
+            config:
+              text: Вт
+              small: true
+              outline: true
+              active: "=vars.day == 'TUESDAY'"
+              action: variable
+              actionVariable: day
+              actionVariableValue: TUESDAY
+          - component: oh-button
+            config:
+              text: Ср
+              small: true
+              outline: true
+              active: "=vars.day == 'WEDNESDAY'"
+              action: variable
+              actionVariable: day
+              actionVariableValue: WEDNESDAY
+          - component: oh-button
+            config:
+              text: Чт
+              small: true
+              outline: true
+              active: "=vars.day == 'THURSDAY'"
+              action: variable
+              actionVariable: day
+              actionVariableValue: THURSDAY
+          - component: oh-button
+            config:
+              text: Пт
+              small: true
+              outline: true
+              active: "=vars.day == 'FRIDAY'"
+              action: variable
+              actionVariable: day
+              actionVariableValue: FRIDAY
+          - component: oh-button
+            config:
+              text: Сб
+              small: true
+              outline: true
+              active: "=vars.day == 'SATURDAY'"
+              action: variable
+              actionVariable: day
+              actionVariableValue: SATURDAY
+          - component: oh-button
+            config:
+              text: Вс
+              small: true
+              outline: true
+              active: "=vars.day == 'SUNDAY'"
+              action: variable
+              actionVariable: day
+              actionVariableValue: SUNDAY
+
+    - component: f7-block
+      config:
+        style:
+          display: flex
+          gap: 8px
+          margin-top: 4px
+          margin-bottom: 8px
+      slots:
+        default:
+          - component: oh-button
+            config:
+              text: Загрузить день
+              fill: true
+              color: blue
+              action: variable
+              actionVariable: entries
+              actionVariableValue: >-
+                =JSON.parse(items[props.item].state)[vars.day || "MONDAY"].map((x) => ({time: JSON.stringify(x).split('"')[1], value: JSON.stringify(x).split('"')[3]}))
+              actionFeedback: Данные выбранного дня загружены
+          - component: oh-button
+            config:
+              text: Добавить точку
+              outline: true
+              color: green
+              action: variable
+              actionVariable: entries
+              actionVariableValue: >-
+                =(vars.entries || []).concat([{time: "12:00:00", value: "OFF"}])
+              visible: "=vars.entries != undefined"
+
+    - component: oh-list
+      config:
+        mediaList: false
+        visible: "=vars.entries != undefined"
+      slots:
+        default:
+          - component: oh-repeater
+            config:
+              for: entry
+              sourceType: array
+              in: "=vars.entries || []"
+              fragment: true
+            slots:
+              default:
+                - component: f7-list-item
+                  config:
+                    title: '="Точка " + (entry_idx + 1)'
+                  slots:
+                    after:
+                      - component: f7-block
+                        config:
+                          style:
+                            display: flex
+                            align-items: center
+                            gap: 6px
+                            margin: 0
+                            padding: 0
+                        slots:
+                          default:
+                            - component: oh-input
+                              config:
+                                type: text
+                                placeholder: HH:mm:ss
+                                variable: entries
+                                variableKey: "='[' + entry_idx + '].time'"
+                                style:
+                                  width: 95px
+                            - component: oh-input
+                              config:
+                                type: text
+                                placeholder: ON/OFF или число
+                                variable: entries
+                                variableKey: "='[' + entry_idx + '].value'"
+                                style:
+                                  width: 120px
+                            - component: oh-button
+                              config:
+                                iconF7: trash
+                                small: true
+                                color: red
+                                action: variable
+                                actionVariable: entries
+                                actionVariableValue: >-
+                                  =vars.entries.filter((x, i) => i != entry_idx)
+
+    - component: f7-block
+      config:
+        visible: "=vars.entries == undefined"
+        style:
+          color: var(--f7-text-color-secondary)
+      slots:
+        default:
+          - component: Label
+            config:
+              text: Выберите день и нажмите «Загрузить день».
+
+    - component: f7-block
+      config:
+        style:
+          display: flex
+          justify-content: flex-end
+          gap: 8px
+          margin-top: 12px
+      slots:
+        default:
+          - component: oh-button
+            config:
+              text: Перезагрузить
+              outline: true
+              action: variable
+              actionVariable: entries
+              actionVariableValue: >-
+                =JSON.parse(items[props.item].state)[vars.day || "MONDAY"].map((x) => ({time: JSON.stringify(x).split('"')[1], value: JSON.stringify(x).split('"')[3]}))
+              visible: "=vars.entries != undefined"
+          - component: oh-button
+            config:
+              text: Сохранить день
+              fill: true
+              color: green
+              action: command
+              actionItem: =props.item
+              actionCommand: >-
+                ='{"MONDAY":' +
+                (((vars.day || "MONDAY") == "MONDAY")
+                  ? '[' + vars.entries.map((e) => '{"' + e.time + '":"' + e.value + '"}').join(',') + ']'
+                  : JSON.stringify(JSON.parse(items[props.item].state).MONDAY)) +
+                ',"TUESDAY":' +
+                (((vars.day || "MONDAY") == "TUESDAY")
+                  ? '[' + vars.entries.map((e) => '{"' + e.time + '":"' + e.value + '"}').join(',') + ']'
+                  : JSON.stringify(JSON.parse(items[props.item].state).TUESDAY)) +
+                ',"WEDNESDAY":' +
+                (((vars.day || "MONDAY") == "WEDNESDAY")
+                  ? '[' + vars.entries.map((e) => '{"' + e.time + '":"' + e.value + '"}').join(',') + ']'
+                  : JSON.stringify(JSON.parse(items[props.item].state).WEDNESDAY)) +
+                ',"THURSDAY":' +
+                (((vars.day || "MONDAY") == "THURSDAY")
+                  ? '[' + vars.entries.map((e) => '{"' + e.time + '":"' + e.value + '"}').join(',') + ']'
+                  : JSON.stringify(JSON.parse(items[props.item].state).THURSDAY)) +
+                ',"FRIDAY":' +
+                (((vars.day || "MONDAY") == "FRIDAY")
+                  ? '[' + vars.entries.map((e) => '{"' + e.time + '":"' + e.value + '"}').join(',') + ']'
+                  : JSON.stringify(JSON.parse(items[props.item].state).FRIDAY)) +
+                ',"SATURDAY":' +
+                (((vars.day || "MONDAY") == "SATURDAY")
+                  ? '[' + vars.entries.map((e) => '{"' + e.time + '":"' + e.value + '"}').join(',') + ']'
+                  : JSON.stringify(JSON.parse(items[props.item].state).SATURDAY)) +
+                ',"SUNDAY":' +
+                (((vars.day || "MONDAY") == "SUNDAY")
+                  ? '[' + vars.entries.map((e) => '{"' + e.time + '":"' + e.value + '"}').join(',') + ']'
+                  : JSON.stringify(JSON.parse(items[props.item].state).SUNDAY)) +
+                '}'
+              actionConfirmation: '{"type":"dialog","title":"Сохранить расписание","text":"Записать изменения выбранного дня в BACnet?"}'
+              actionFeedback: Расписание отправлено
+              visible: "=vars.entries != undefined"
