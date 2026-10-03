@@ -114,6 +114,10 @@ public class CompositeConverter implements BacNetToJavaConverter<State> {
       if (sequence.getCount() > 0) {
         Encodable value = sequence.get(0);
         if (value instanceof DailySchedule) {
+          if (sequence.getCount() < 7) {
+            logger.warn("Expected 7 days in BACnet Weekly_Schedule, got {}", sequence.getCount());
+            return UnDefType.UNDEF;
+          }
           WeeklyScheduleType schedule = new WeeklyScheduleType();
           schedule = convertDay(value, schedule, schedule::withMondaySchedule);
           schedule = convertDay(sequence.get(1), schedule, schedule::withTuesdaySchedule);
