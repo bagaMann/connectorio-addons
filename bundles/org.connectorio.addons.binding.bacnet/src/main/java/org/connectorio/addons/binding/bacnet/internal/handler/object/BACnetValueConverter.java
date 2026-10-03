@@ -153,15 +153,15 @@ public class BACnetValueConverter {
   }
 
   private static Encodable encodeSchedule(WeeklyScheduleType value) {
-    BACnetArray<DailySchedule> array = new BACnetArray<>();
-    array.add(encodeDailySchedule(value.getMondaySchedule()));
-    array.add(encodeDailySchedule(value.getTuesdaySchedule()));
-    array.add(encodeDailySchedule(value.getWednesdaySchedule()));
-    array.add(encodeDailySchedule(value.getThursdaySchedule()));
-    array.add(encodeDailySchedule(value.getFridaySchedule()));
-    array.add(encodeDailySchedule(value.getSaturdaySchedule()));
-    array.add(encodeDailySchedule(value.getSundaySchedule()));
-    return array;
+    return new BACnetArray<DailySchedule>(
+      encodeDailySchedule(value.getMondaySchedule()),
+      encodeDailySchedule(value.getTuesdaySchedule()),
+      encodeDailySchedule(value.getWednesdaySchedule()),
+      encodeDailySchedule(value.getThursdaySchedule()),
+      encodeDailySchedule(value.getFridaySchedule()),
+      encodeDailySchedule(value.getSaturdaySchedule()),
+      encodeDailySchedule(value.getSundaySchedule())
+    );
   }
 
   private static DailySchedule encodeDailySchedule(DayScheduleType daySchedule) {
