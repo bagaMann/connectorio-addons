@@ -17,6 +17,7 @@
  */
 package org.connectorio.addons.temporal.item.internal;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.connectorio.addons.temporal.WeeklyScheduleType;
@@ -43,10 +44,22 @@ public class WeekScheduleItem extends GenericItem implements Item {
 
   @Override
   public List<Class<? extends Command>> getAcceptedCommandTypes() {
-    return Arrays.asList(
+    List<Class<? extends Command>> types = new ArrayList<>(Arrays.asList(
       WeeklyScheduleType.class,
       StringType.class
-    );
+    ));
+    // openHAB's event parser resolves the bridge type in its own class loader.
+    // CommunicationManager checks exact command classes, not assignability.
+    try {
+      Class<?> bridgeType = Class.forName("org.openhab.core.library.types.WeeklyScheduleType",
+        false, Command.class.getClassLoader());
+      if (WeeklyScheduleType.class.isAssignableFrom(bridgeType)) {
+        types.add(bridgeType.asSubclass(Command.class));
+      }
+    } catch (ClassNotFoundException e) {
+      // The optional openHAB fragment is not installed; native types still work.
+    }
+    return types;
   }
 
 }
