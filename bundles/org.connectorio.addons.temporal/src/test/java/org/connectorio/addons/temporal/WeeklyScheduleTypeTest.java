@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.entry;
 
 import java.time.LocalTime;
 import org.junit.jupiter.api.Test;
-import org.openhab.core.library.types.StringType;
+import org.openhab.core.library.types.DecimalType;
 
 class WeeklyScheduleTypeTest {
   @Test
@@ -75,8 +75,8 @@ class WeeklyScheduleTypeTest {
     LocalTime _06_01 = LocalTime.of(6, 1);
     LocalTime _20_30 = LocalTime.of(20, 30);
     DayScheduleType dateType = new DayScheduleType(
-      entry(new LocalTimeType(_06_01), new StringType("1.0")),
-      entry(new LocalTimeType(_20_30), new StringType("0.0"))
+      entry(new LocalTimeType(_06_01), new DecimalType("1.0")),
+      entry(new LocalTimeType(_20_30), new DecimalType("0.0"))
     );
     return dateType;
   }
