@@ -139,14 +139,11 @@ public class WeeklyScheduleType implements Command, State {
     for (int index = 0; index < weekSchedule.length; index++) {
       DayScheduleType day = weekSchedule[index];
       if (day != null) {
-        str.append('"').append(DayOfWeekType.values()[index].name()).append('"').append(':').append(day.toFullString());
-        if (!haveAtLeastOneDay) {
-          haveAtLeastOneDay = true;
-        } else {
-          if (index + 1 < weekSchedule.length) {
-            str.append(',');
-          }
+        if (haveAtLeastOneDay) {
+          str.append(',');
         }
+        str.append('"').append(DayOfWeekType.values()[index].name()).append('"').append(':').append(day.toFullString());
+        haveAtLeastOneDay = true;
       }
     }
     str.append('}');
