@@ -225,7 +225,10 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
     BridgeBuilder builder = editThing();
     builder.withChannels(new ArrayList<>());
     for (BacNetObject object : client.getDeviceObjects(device)) {
-      createChannel(builder, object, PropertyIdentifier.presentValue);
+      PropertyIdentifier propertyIdentifier = object.getType() == Type.SCHEDULE
+        ? PropertyIdentifier.weeklySchedule
+        : PropertyIdentifier.presentValue;
+      createChannel(builder, object, propertyIdentifier);
     }
     updateThing(builder.build());
   }
