@@ -27,6 +27,8 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.openhab.core.library.types.DecimalType;
+import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.StringType;
 import org.openhab.core.types.Command;
 import org.openhab.core.types.State;
@@ -109,11 +111,25 @@ public class DayScheduleType implements Command, State {
       String value = matcher.group("value");
 
       if (time != null && value != null) {
-        map.put(new LocalTimeType(time), new StringType(value));
+        map.put(new LocalTimeType(time), parseState(value));
       }
     }
 
     return map;
+  }
+
+  private static State parseState(String value) {
+    if ("ON".equalsIgnoreCase(value)) {
+      return OnOffType.ON;
+    }
+    if ("OFF".equalsIgnoreCase(value)) {
+      return OnOffType.OFF;
+    }
+    try {
+      return new DecimalType(value);
+    } catch (NumberFormatException e) {
+      return new StringType(value);
+    }
   }
 
   private static SortedMap<LocalTimeType, State> sort(Entry<LocalTimeType, State>[] schedules) {
