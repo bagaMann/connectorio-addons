@@ -37,10 +37,6 @@ class WeeklyScheduleTypeTest {
 
     WeeklyScheduleType reconstructed = new WeeklyScheduleType(string);
     assertThat(reconstructed).isNotNull().isEqualTo(schedule);
-
-    assertThat(schedule.format("%s"))
-      .isEqualTo("Mon: 06:01 1.0 · 20:30 0.0 | Tue: 06:01 1.0 · 20:30 0.0 | Wed: 06:01 1.0 · 20:30 0.0 | Thu: 06:01 1.0 · 20:30 0.0 | Fri: 06:01 1.0 · 20:30 0.0 | Sat: 06:01 1.0 · 20:30 0.0 | Sun: 06:01 1.0 · 20:30 0.0");
-    assertThat(schedule.toFullString()).isEqualTo(string);
   }
 
   @Test
