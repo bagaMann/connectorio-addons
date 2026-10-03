@@ -1,0 +1,44 @@
+name: Build BACnet Weekly Schedule JSON
+
+on:
+  push:
+    branches:
+      - build/bacnet-weekly-schedule-json
+  workflow_dispatch:
+
+jobs:
+  build-kar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: connectorio-addons
+      - uses: actions/checkout@v4
+        with:
+          repository: bagaMann/bacnet4j-wrapper
+          ref: stable/bacnet-tested-2026-10-01
+          path: bacnet4j-wrapper
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Install wrapper
+        working-directory: bacnet4j-wrapper
+        run: mvn -U -pl api,ip,mstp -am install -DskipTests
+      - name: Test temporal module
+        working-directory: connectorio-addons
+        run: mvn -U -Popenhab -pl bundles/org.connectorio.addons.temporal -am test
+      - name: Build BACnet KAR
+        working-directory: connectorio-addons
+        run: |
+          mvn -U -Popenhab             -pl kars/org.connectorio.addons.kar.bacnet             -am package -DskipTests
+      - name: Verify Weekly Schedule JSON
+        working-directory: connectorio-addons
+        run: |
+          set -euo pipefail
+          W=bundles/org.connectorio.addons.temporal/src/main/java/org/connectorio/addons/temporal/WeeklyScheduleType.java
+          T=bundles/org.connectorio.addons.temporal/src/test/java/org/connectorio/addons/temporal/WeeklyScheduleTypeTest.java
+          grep -q 'if (haveAtLeastOneDay)' "$W"
+          grep -q 'doesNotContain' "$T"
+          ls -lh kars/org.connectorio.addons.kar.bacnet/target/*.kar
