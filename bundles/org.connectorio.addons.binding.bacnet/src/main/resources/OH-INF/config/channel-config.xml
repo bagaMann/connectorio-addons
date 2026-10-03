@@ -263,27 +263,4 @@
     </parameter>
   </config-description>
 
-  <config-description uri="thing-type:co7io-bacnet:device-week-schedule-read-only">
-    <parameter-group name="object">
-      <label>Object configuration</label>
-      <description>BACnet Schedule object whose Weekly_Schedule property will be shown as readable text.</description>
-    </parameter-group>
-    <parameter-group name="basic">
-      <label>Polling</label>
-      <description>Weekly schedule view is read by polling.</description>
-    </parameter-group>
-
-    <parameter name="instance" type="integer" required="true" groupName="object" min="0">
-      <label>Instance number</label>
-      <description>BACnet Schedule object instance.</description>
-    </parameter>
-
-    <parameter name="refreshInterval" type="integer" groupName="basic" required="false">
-      <label>Refresh interval</label>
-      <description>Time between Weekly_Schedule reads. If 0, the interval is inherited from the device or bridge.</description>
-      <unitLabel>ms</unitLabel>
-      <default>0</default>
-    </parameter>
-  </config-description>
-
 </config-description:config-descriptions>
