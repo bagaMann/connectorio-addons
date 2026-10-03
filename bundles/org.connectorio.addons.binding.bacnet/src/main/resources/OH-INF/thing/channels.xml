@@ -250,9 +250,10 @@
   </channel-type>
 
   <channel-type id="deviceWriteableWeekSchedule">
-    <item-type>WeeklySchedule</item-type>
-    <label>A week spanning schedule</label>
-    <config-description-ref uri="thing-type:co7io-bacnet:device-read-write"></config-description-ref>
+    <item-type>WeekSchedule</item-type>
+    <label>Weekly schedule</label>
+    <description>BACnet Weekly_Schedule property (read/write).</description>
+    <config-description-ref uri="thing-type:co7io-bacnet:device-week-schedule-read-write"></config-description-ref>
   </channel-type>
 
 </thing:thing-descriptions>
