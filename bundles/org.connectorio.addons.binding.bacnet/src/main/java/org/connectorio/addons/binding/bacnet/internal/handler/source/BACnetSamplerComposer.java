@@ -60,24 +60,18 @@ public class BACnetSamplerComposer implements SamplerComposer<BACnetPropertySamp
 
     for (BACnetPropertySampler sampler : samplers) {
       Map<BacNetObject, List<String>> samples = sampler.getSamples();
-      boolean hasMergedSample = false;
-
       for (Entry<BacNetObject, List<String>> entry : samples.entrySet()) {
         for (String property : entry.getValue()) {
           if (Names.PRESENT_VALUE.equals(property)) {
             presentValues.put(entry.getKey(), sampler.getCallback());
           } else {
-            mergedSamples.computeIfAbsent(entry.getKey(), key -> new HashSet<>()).add(property);
-            hasMergedSample = true;
+            if (!mergedSamples.containsKey(entry.getKey())) {
+              consumers.add(sampler.getCallback());
+              mergedSamples.put(entry.getKey(), new HashSet<>());
+            }
+            mergedSamples.get(entry.getKey()).addAll(entry.getValue());
           }
         }
-      }
-
-      // A merged BACnet read can satisfy several channels that request the
-      // same object/property. Keep every sampler callback so the single
-      // response is delivered to every interested channel.
-      if (hasMergedSample) {
-        consumers.add(sampler.getCallback());
       }
     }
 
