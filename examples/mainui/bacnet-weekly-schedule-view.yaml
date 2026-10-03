@@ -30,37 +30,44 @@ slots:
           - component: oh-list-item
             config:
               title: Понедельник
-              after: '=JSON.parse(items[props.item].state).MONDAY.map((x) => JSON.stringify(x).split('"')[1].substring(0,5) + " " + JSON.stringify(x).split('"')[3]).join(" · ")'
+              after: >-
+                =JSON.parse(items[props.item].state).MONDAY.map((x) => JSON.stringify(x).split('"')[1].substring(0,5) + " " + JSON.stringify(x).split('"')[3]).join(" · ")
               visible: '=items[props.item] && items[props.item].state != "NULL" && items[props.item].state != "UNDEF" && items[props.item].state.startsWith("{")'
           - component: oh-list-item
             config:
               title: Вторник
-              after: '=JSON.parse(items[props.item].state).TUESDAY.map((x) => JSON.stringify(x).split('"')[1].substring(0,5) + " " + JSON.stringify(x).split('"')[3]).join(" · ")'
+              after: >-
+                =JSON.parse(items[props.item].state).TUESDAY.map((x) => JSON.stringify(x).split('"')[1].substring(0,5) + " " + JSON.stringify(x).split('"')[3]).join(" · ")
               visible: '=items[props.item] && items[props.item].state != "NULL" && items[props.item].state != "UNDEF" && items[props.item].state.startsWith("{")'
           - component: oh-list-item
             config:
               title: Среда
-              after: '=JSON.parse(items[props.item].state).WEDNESDAY.map((x) => JSON.stringify(x).split('"')[1].substring(0,5) + " " + JSON.stringify(x).split('"')[3]).join(" · ")'
+              after: >-
+                =JSON.parse(items[props.item].state).WEDNESDAY.map((x) => JSON.stringify(x).split('"')[1].substring(0,5) + " " + JSON.stringify(x).split('"')[3]).join(" · ")
               visible: '=items[props.item] && items[props.item].state != "NULL" && items[props.item].state != "UNDEF" && items[props.item].state.startsWith("{")'
           - component: oh-list-item
             config:
               title: Четверг
-              after: '=JSON.parse(items[props.item].state).THURSDAY.map((x) => JSON.stringify(x).split('"')[1].substring(0,5) + " " + JSON.stringify(x).split('"')[3]).join(" · ")'
+              after: >-
+                =JSON.parse(items[props.item].state).THURSDAY.map((x) => JSON.stringify(x).split('"')[1].substring(0,5) + " " + JSON.stringify(x).split('"')[3]).join(" · ")
               visible: '=items[props.item] && items[props.item].state != "NULL" && items[props.item].state != "UNDEF" && items[props.item].state.startsWith("{")'
           - component: oh-list-item
             config:
               title: Пятница
-              after: '=JSON.parse(items[props.item].state).FRIDAY.map((x) => JSON.stringify(x).split('"')[1].substring(0,5) + " " + JSON.stringify(x).split('"')[3]).join(" · ")'
+              after: >-
+                =JSON.parse(items[props.item].state).FRIDAY.map((x) => JSON.stringify(x).split('"')[1].substring(0,5) + " " + JSON.stringify(x).split('"')[3]).join(" · ")
               visible: '=items[props.item] && items[props.item].state != "NULL" && items[props.item].state != "UNDEF" && items[props.item].state.startsWith("{")'
           - component: oh-list-item
             config:
               title: Суббота
-              after: '=JSON.parse(items[props.item].state).SATURDAY.map((x) => JSON.stringify(x).split('"')[1].substring(0,5) + " " + JSON.stringify(x).split('"')[3]).join(" · ")'
+              after: >-
+                =JSON.parse(items[props.item].state).SATURDAY.map((x) => JSON.stringify(x).split('"')[1].substring(0,5) + " " + JSON.stringify(x).split('"')[3]).join(" · ")
               visible: '=items[props.item] && items[props.item].state != "NULL" && items[props.item].state != "UNDEF" && items[props.item].state.startsWith("{")'
           - component: oh-list-item
             config:
               title: Воскресенье
-              after: '=JSON.parse(items[props.item].state).SUNDAY.map((x) => JSON.stringify(x).split('"')[1].substring(0,5) + " " + JSON.stringify(x).split('"')[3]).join(" · ")'
+              after: >-
+                =JSON.parse(items[props.item].state).SUNDAY.map((x) => JSON.stringify(x).split('"')[1].substring(0,5) + " " + JSON.stringify(x).split('"')[3]).join(" · ")
               visible: '=items[props.item] && items[props.item].state != "NULL" && items[props.item].state != "UNDEF" && items[props.item].state.startsWith("{")'
           - component: oh-list-item
             config:
