@@ -168,7 +168,7 @@ public class BACnetValueConverter {
     ArrayList<TimeValue> slots = new ArrayList<>();
     for (Entry<LocalTimeType, State> entry : daySchedule.getDaySchedule().entrySet()) {
       LocalTime time = entry.getKey().getTime();
-      slots.add(new TimeValue(new Time(time.getHour(), time.getMinute(), time.getSecond(), time.getNano()),
+      slots.add(new TimeValue(new Time(time.getHour(), time.getMinute(), time.getSecond(), time.getNano() / 10_000_000),
         openHabTypeToBacNetPrimitive(entry.getValue())
       ));
     }
