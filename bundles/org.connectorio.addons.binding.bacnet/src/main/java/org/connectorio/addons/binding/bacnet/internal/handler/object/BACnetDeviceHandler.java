@@ -67,7 +67,6 @@ import org.connectorio.addons.temporal.item.TemporalItemFactory;
 import org.openhab.core.config.core.Configuration;
 import org.openhab.core.library.CoreItemFactory;
 import org.openhab.core.library.types.DecimalType;
-import org.openhab.core.library.types.StringType;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.Channel;
 import org.openhab.core.thing.ChannelUID;
@@ -79,7 +78,6 @@ import org.openhab.core.thing.binding.builder.ChannelBuilder;
 import org.openhab.core.thing.type.ChannelTypeUID;
 import org.openhab.core.types.Command;
 import org.openhab.core.types.RefreshType;
-import org.openhab.core.types.State;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -372,7 +370,7 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
 
   private Type resolveObjectType(Channel channel, DeviceChannelConfig config) {
     String channelType = channel.getChannelTypeUID() == null ? "" : channel.getChannelTypeUID().getId();
-    if ("deviceWriteableWeekSchedule".equals(channelType) || "deviceReadableWeekScheduleView".equals(channelType)) {
+    if ("deviceWriteableWeekSchedule".equals(channelType)) {
       return Type.SCHEDULE;
     }
     return config.type;
@@ -399,7 +397,6 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
       case "deviceReadableOutOfService":
         return PropertyIdentifier.outOfService.toString();
       case "deviceWriteableWeekSchedule":
-      case "deviceReadableWeekScheduleView":
         return PropertyIdentifier.weeklySchedule.toString();
       default:
         return Optional.ofNullable(config.propertyIdentifier)
@@ -419,7 +416,6 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
       case "deviceReadableStatusFlags":
       case "deviceReadableEventState":
       case "deviceReadableOutOfService":
-      case "deviceReadableWeekScheduleView":
         return true;
       case "deviceWriteableBinary":
       case "deviceWriteableNumber":
@@ -431,18 +427,6 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
       default:
         return config.readOnly;
     }
-  }
-
-  private Consumer<Encodable> weeklyScheduleConsumer(Channel channel) {
-    return value -> {
-      State state = CompositeConverter.INSTANCE.fromBacNet(value);
-      if (state instanceof org.connectorio.addons.temporal.WeeklyScheduleType) {
-        String display = ((org.connectorio.addons.temporal.WeeklyScheduleType) state).toDisplayString();
-        getCallback().stateUpdated(channel.getUID(), new StringType(display));
-      } else {
-        getCallback().stateUpdated(channel.getUID(), state);
-      }
-    };
   }
 
   protected abstract Device createDevice(C config, Integer networkNumber);
@@ -474,10 +458,6 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
           } else if (PropertyIdentifier.outOfService.toString().equals(attribute)) {
             source.request(new BACnetObjectsSampler(client, object, PropertyIdentifier.outOfService.toString(),
               value -> updateOutOfService(channel, value)));
-          } else if ("deviceReadableWeekScheduleView".equals(
-              channel.getChannelTypeUID() == null ? "" : channel.getChannelTypeUID().getId())) {
-            source.request(new BACnetObjectsSampler(client, object, PropertyIdentifier.weeklySchedule.toString(),
-              weeklyScheduleConsumer(channel)));
           } else {
             source.request(new BACnetObjectsSampler(client, object, attribute, new SamplerCallback(
               CompositeConverter.INSTANCE, new ChannelCallback(getCallback(), channel))));
@@ -600,16 +580,10 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
       }
 
       if (PropertyIdentifier.weeklySchedule.toString().equals(propertyIdentifier)) {
-        String channelType = channel.getChannelTypeUID() == null ? "" : channel.getChannelTypeUID().getId();
-        Consumer<Encodable> scheduleConsumer = "deviceReadableWeekScheduleView".equals(channelType)
-          ? weeklyScheduleConsumer(channel)
-          : new SamplerCallback(CompositeConverter.INSTANCE, new ChannelCallback(getCallback(), channel));
-        BACnetObjectsSampler scheduleSampler = new BACnetObjectsSampler(client, object,
-          PropertyIdentifier.weeklySchedule.toString(), scheduleConsumer);
-        // Weekly_Schedule is not delivered by COV. Populate the channel immediately
-        // instead of waiting for the first periodic polling interval.
-        source.request(scheduleSampler);
-        source.add(refreshInterval, channel.getUID().getAsString(), scheduleSampler);
+        Consumer<Encodable> scheduleConsumer = new SamplerCallback(CompositeConverter.INSTANCE,
+          new ChannelCallback(getCallback(), channel));
+        source.add(refreshInterval, channel.getUID().getAsString(),
+          new BACnetObjectsSampler(client, object, PropertyIdentifier.weeklySchedule.toString(), scheduleConsumer));
         continue;
       }
 
