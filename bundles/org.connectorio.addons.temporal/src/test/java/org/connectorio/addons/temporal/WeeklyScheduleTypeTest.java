@@ -46,6 +46,18 @@ class WeeklyScheduleTypeTest {
   }
 
   @Test
+  public void testBooleanAndNumericRoundTrip() {
+    String source = "{\"MONDAY\":[{\"08:00:00\":\"ON\"},{\"18:00:00\":\"OFF\"}],\"TUESDAY\":[{\"12:00:00\":\"21.5\"}]}";
+    WeeklyScheduleType schedule = new WeeklyScheduleType(source);
+
+    assertThat(schedule.getMondaySchedule().getDaySchedule().values())
+      .containsExactly(org.openhab.core.library.types.OnOffType.ON, org.openhab.core.library.types.OnOffType.OFF);
+    assertThat(schedule.getTuesdaySchedule().getDaySchedule().values())
+      .containsExactly(new org.openhab.core.library.types.DecimalType("21.5"));
+    assertThat(schedule.toFullString()).isEqualTo(source);
+  }
+
+  @Test
   public void verifyInvalidDay() {
     assertThatThrownBy(() -> new WeeklyScheduleType("{\"MON\":[]}"))
       .isInstanceOf(IllegalArgumentException.class)
