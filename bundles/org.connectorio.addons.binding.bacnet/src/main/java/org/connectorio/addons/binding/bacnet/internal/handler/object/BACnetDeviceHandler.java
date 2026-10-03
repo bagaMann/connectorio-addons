@@ -63,10 +63,12 @@ import org.connectorio.addons.communication.watchdog.Watchdog;
 import org.connectorio.addons.communication.watchdog.WatchdogManager;
 import org.connectorio.addons.link.LinkListener;
 import org.connectorio.addons.link.LinkManager;
+import org.connectorio.addons.temporal.WeeklyScheduleType;
 import org.connectorio.addons.temporal.item.TemporalItemFactory;
 import org.openhab.core.config.core.Configuration;
 import org.openhab.core.library.CoreItemFactory;
 import org.openhab.core.library.types.DecimalType;
+import org.openhab.core.library.types.StringType;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.Channel;
 import org.openhab.core.thing.ChannelUID;
@@ -499,7 +501,13 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
         priority = prioritizedCmd.getPriority();
         command = prioritizedCmd.getCommand();
       }
-      JavaToBacNetConverter<Command> converter = (value) -> BACnetValueConverter.openHabTypeToBacNetValue(object.getType().getBacNetType(), value);
+      JavaToBacNetConverter<Command> converter = (value) -> {
+        Command convertedValue = value;
+        if (PropertyIdentifier.weeklySchedule.toString().equals(attribute) && value instanceof StringType) {
+          convertedValue = new WeeklyScheduleType(value.toString());
+        }
+        return BACnetValueConverter.openHabTypeToBacNetValue(object.getType().getBacNetType(), convertedValue);
+      };
       if (priority == null) clientFuture.join().setObjectPropertyValue(object, attribute, command, converter);
       else clientFuture.join().setObjectPropertyValue(object, attribute, command, converter, priority);
       logger.debug("Command {} for property {} executed successfully", command, object);
