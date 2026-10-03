@@ -157,11 +157,11 @@ public class BACnetValueConverter {
   }
 
   public static Encodable openHabScheduleToBacNetValue(WeeklyScheduleType value, Encodable currentSchedule) {
-    if (!(currentSchedule instanceof BACnetArray<?>)) {
+    if (!(currentSchedule instanceof SequenceOf<?>)) {
       throw new IllegalArgumentException("Cannot determine value type from BACnet weekly schedule " + currentSchedule);
     }
     java.lang.Boolean booleanValues = null;
-    for (Encodable day : (BACnetArray<?>) currentSchedule) {
+    for (Encodable day : (SequenceOf<?>) currentSchedule) {
       if (!(day instanceof DailySchedule)) {
         throw new IllegalArgumentException("Unexpected BACnet daily schedule " + day);
       }
