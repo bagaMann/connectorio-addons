@@ -1,0 +1,45 @@
+name: Build BACnet Weekly Schedule view
+
+on:
+  push:
+    branches:
+      - build/bacnet-weekly-schedule-view
+  workflow_dispatch:
+
+jobs:
+  build-kar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: connectorio-addons
+      - uses: actions/checkout@v4
+        with:
+          repository: bagaMann/bacnet4j-wrapper
+          ref: stable/bacnet-tested-2026-10-01
+          path: bacnet4j-wrapper
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Install wrapper
+        working-directory: bacnet4j-wrapper
+        run: mvn -U -pl api,ip,mstp -am install -DskipTests
+      - name: Build BACnet KAR
+        working-directory: connectorio-addons
+        run: |
+          mvn -U -Popenhab             -pl kars/org.connectorio.addons.kar.bacnet             -am package -DskipTests
+      - name: Verify Weekly Schedule view
+        working-directory: connectorio-addons
+        run: |
+          set -euo pipefail
+          H=bundles/org.connectorio.addons.binding.bacnet/src/main/java/org/connectorio/addons/binding/bacnet/internal/handler/object/BACnetDeviceHandler.java
+          C=bundles/org.connectorio.addons.binding.bacnet/src/main/resources/OH-INF/thing/channels.xml
+          B=bundles/org.connectorio.addons.binding.bacnet/src/main/resources/OH-INF/thing/bridge.xml
+          grep -q 'deviceReadableWeekScheduleView' "$H"
+          grep -q 'weeklyScheduleConsumer' "$H"
+          grep -q '<item-type>String</item-type>' "$C"
+          grep -q 'Weekly schedule view' "$C"
+          grep -q 'deviceReadableWeekScheduleView' "$B"
+          ls -lh kars/org.connectorio.addons.kar.bacnet/target/*.kar
