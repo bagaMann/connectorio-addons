@@ -253,6 +253,7 @@
     <item-type>WeekSchedule</item-type>
     <label>Weekly schedule</label>
     <description>BACnet Weekly_Schedule property (read/write).</description>
+    <state pattern="%s"/>
     <config-description-ref uri="thing-type:co7io-bacnet:device-week-schedule-read-write"></config-description-ref>
   </channel-type>
 
