@@ -604,8 +604,12 @@ public abstract class BACnetDeviceHandler<C extends DeviceConfig> extends BACnet
         Consumer<Encodable> scheduleConsumer = "deviceReadableWeekScheduleView".equals(channelType)
           ? weeklyScheduleConsumer(channel)
           : new SamplerCallback(CompositeConverter.INSTANCE, new ChannelCallback(getCallback(), channel));
-        source.add(refreshInterval, channel.getUID().getAsString(),
-          new BACnetObjectsSampler(client, object, PropertyIdentifier.weeklySchedule.toString(), scheduleConsumer));
+        BACnetObjectsSampler scheduleSampler = new BACnetObjectsSampler(client, object,
+          PropertyIdentifier.weeklySchedule.toString(), scheduleConsumer);
+        // Weekly_Schedule is not delivered by COV. Populate the channel immediately
+        // instead of waiting for the first periodic polling interval.
+        source.request(scheduleSampler);
+        source.add(refreshInterval, channel.getUID().getAsString(), scheduleSampler);
         continue;
       }
 
