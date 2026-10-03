@@ -1,0 +1,50 @@
+name: Build BACnet Weekly Schedule display
+
+on:
+  push:
+    branches:
+      - build/bacnet-weekly-schedule-display
+  workflow_dispatch:
+
+jobs:
+  build-kar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: connectorio-addons
+      - uses: actions/checkout@v4
+        with:
+          repository: bagaMann/bacnet4j-wrapper
+          ref: stable/bacnet-tested-2026-10-01
+          path: bacnet4j-wrapper
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Install wrapper
+        working-directory: bacnet4j-wrapper
+        run: mvn -U -pl api,ip,mstp -am install -DskipTests
+
+      - name: Test temporal module
+        working-directory: connectorio-addons
+        run: mvn -U -pl bundles/org.connectorio.addons.temporal test
+
+      - name: Build BACnet KAR
+        working-directory: connectorio-addons
+        run: |
+          mvn -U -Popenhab             -pl kars/org.connectorio.addons.kar.bacnet             -am package -DskipTests
+
+      - name: Verify Weekly Schedule display separation
+        working-directory: connectorio-addons
+        run: |
+          set -euo pipefail
+          W=bundles/org.connectorio.addons.temporal/src/main/java/org/connectorio/addons/temporal/WeeklyScheduleType.java
+          C=bundles/org.connectorio.addons.binding.bacnet/src/main/resources/OH-INF/thing/channels.xml
+          grep -q 'return toDisplayString();' "$W"
+          grep -q 'public String toFullString()' "$W"
+          grep -q 'Mon' "$W"
+          grep -q '<state pattern="%s"/>' "$C"
+          ls -lh kars/org.connectorio.addons.kar.bacnet/target/*.kar
