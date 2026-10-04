@@ -11,6 +11,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -36,6 +37,7 @@ import org.openhab.core.items.ItemRegistry;
 import org.openhab.core.persistence.ModifiablePersistenceService;
 import org.openhab.core.persistence.PersistenceService;
 import org.openhab.core.persistence.PersistenceServiceRegistry;
+import org.openhab.core.persistence.PersistedItem;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingRegistry;
 import org.openhab.core.thing.ThingUID;
@@ -71,7 +73,8 @@ public class TrendLogCommand extends AbstractConsoleCommandExtension {
     boolean read = args.length > 0 && "read".equals(args[0]) && args.length >= 3 && args.length <= 5;
     boolean importPage = args.length > 0 && "import-page".equals(args[0]) && args.length == 9;
     boolean importAll = args.length > 0 && "import-all".equals(args[0]) && args.length == 8;
-    if (!read && !importPage && !importAll) {
+    boolean sync = args.length > 0 && "sync".equals(args[0]) && args.length == 7;
+    if (!read && !importPage && !importAll && !sync) {
       getUsages().forEach(console::println);
       return;
     }
@@ -81,7 +84,8 @@ public class TrendLogCommand extends AbstractConsoleCommandExtension {
         console.println("Instance must be 0..4194302.");
         return;
       }
-      if ((importPage && !"CONFIRM".equals(args[8])) || (importAll && !"CONFIRM".equals(args[7]))) {
+      if ((importPage && !"CONFIRM".equals(args[8])) || (importAll && !"CONFIRM".equals(args[7]))
+          || (sync && !"CONFIRM".equals(args[6]))) {
         console.println("Import was not started. The final argument must be exactly CONFIRM.");
         return;
       }
@@ -90,7 +94,8 @@ public class TrendLogCommand extends AbstractConsoleCommandExtension {
         console.println("Expected record count must be 1.." + MAX_FULL_IMPORT_RECORDS + ".");
         return;
       }
-      int position = args.length >= 4 ? Integer.parseInt(args[3]) : 1;
+      int position = read ? (args.length >= 4 ? Integer.parseInt(args[3]) : 1)
+          : importPage ? Integer.parseInt(args[3]) : 1;
       int count = read ? (args.length == 5 ? Integer.parseInt(args[4]) : 5)
           : importPage ? Integer.parseInt(args[4]) : 0;
       if (!importAll && (position < 1 || count < 1 || count > PAGE_SIZE)) {
@@ -112,6 +117,10 @@ public class TrendLogCommand extends AbstractConsoleCommandExtension {
       BacNetObject object = new BacNetObject(device, instance, Type.TREND_LOG);
       if (importAll) {
         importAll(args, expectedCount, client, object, console);
+        return;
+      }
+      if (sync) {
+        sync(args, client, object, console);
         return;
       }
       console.println("Reading " + object + "; buffer position=" + position + ", count=" + count);
@@ -159,7 +168,8 @@ public class TrendLogCommand extends AbstractConsoleCommandExtension {
     return Arrays.asList(
         "bacnet-trendlog read DEVICE_THING_UID INSTANCE [POSITION [COUNT]] - read only; defaults 1, 5; max 10 records",
         "bacnet-trendlog import-page DEVICE_THING_UID INSTANCE POSITION COUNT ITEM SERVICE ZONE_ID CONFIRM - import one page; max 10 records",
-        "bacnet-trendlog import-all DEVICE_THING_UID INSTANCE EXPECTED_COUNT ITEM SERVICE ZONE_ID CONFIRM - validate and import a stable full buffer snapshot");
+        "bacnet-trendlog import-all DEVICE_THING_UID INSTANCE EXPECTED_COUNT ITEM SERVICE ZONE_ID CONFIRM - validate and import a stable full buffer snapshot",
+        "bacnet-trendlog sync DEVICE_THING_UID INSTANCE ITEM SERVICE ZONE_ID CONFIRM - import only records newer than the latest persisted timestamp");
   }
 
   private void importPage(String[] args, ReadRangeAck ack, Console console) throws ItemNotFoundException {
@@ -302,6 +312,156 @@ public class TrendLogCommand extends AbstractConsoleCommandExtension {
     console.println("Imported=" + stored + "; item=" + item.getName() + "; service=" + persistence.getId()
         + "; controllerZone=" + zone + "; openHABZone=" + openHABZone + ".");
     console.println("The Item's current state was not changed. Re-importing the same timestamps is intended to be idempotent in InfluxDB.");
+  }
+
+  private void sync(String[] args, BacNetClient client, BacNetObject object, Console console)
+      throws ItemNotFoundException {
+    Item item = items.getItem(args[3]);
+    PersistenceService persistence = persistenceServices.get(args[4]);
+    if (persistence == null) {
+      console.println("Persistence service not found: " + args[4]);
+      return;
+    }
+    if (!(persistence instanceof ModifiablePersistenceService)) {
+      console.println("Persistence service does not support historical timestamp queries and writes: " + args[4]);
+      return;
+    }
+    ModifiablePersistenceService modifiablePersistence = (ModifiablePersistenceService) persistence;
+    ZoneId zone = ZoneId.of(args[5]);
+    PersistedItem persistedItem = modifiablePersistence.persistedItem(item.getName(), null);
+    if (persistedItem == null) {
+      console.println("Sync aborted: no persisted cursor exists for " + item.getName()
+          + ". Run a guarded import-all first.");
+      return;
+    }
+    java.time.Instant cursor = persistedItem.getTimestamp().toInstant();
+    console.println("Latest persisted cursor: " + persistedItem.getTimestamp() + " | " + persistedItem.getState());
+
+    int recordCount = readUnsignedProperty(client, object, "record-count");
+    int bufferSize = readUnsignedProperty(client, object, "buffer-size");
+    if (recordCount < 1 || recordCount > bufferSize || recordCount > MAX_FULL_IMPORT_RECORDS) {
+      console.println("Sync aborted: invalid record-count=" + recordCount + ", buffer-size=" + bufferSize + ".");
+      return;
+    }
+
+    int newestPagePosition = Math.max(1, recordCount - PAGE_SIZE + 1);
+    int newestPageCount = recordCount - newestPagePosition + 1;
+    ReadRangeAck newestPage = TrendLogs.readByPosition(client, object, newestPagePosition, newestPageCount);
+    if (newestPage.getItemCount().intValue() != newestPageCount) {
+      console.println("Sync aborted before persistence: newest page requested=" + newestPageCount + " returned="
+          + newestPage.getItemCount() + ".");
+      return;
+    }
+    Encodable newestEntry = newestPage.getItemData().get(newestPageCount - 1);
+    if (!(newestEntry instanceof LogRecord)) {
+      console.println("Sync aborted before persistence: unexpected newest record type "
+          + newestEntry.getClass().getName() + ".");
+      return;
+    }
+    java.time.Instant newestTimestamp = toZonedDateTime((LogRecord) newestEntry, zone).toInstant();
+    String newestSignature = newestEntry.toString();
+    console.println("Newest controller timestamp: " + newestTimestamp.atZone(zone));
+    if (cursor.isAfter(newestTimestamp)) {
+      console.println("Sync aborted: the latest persisted timestamp is newer than the controller archive. "
+          + "Use a dedicated archive Item without live channel updates or unrelated persistence records.");
+      return;
+    }
+    if (cursor.equals(newestTimestamp)) {
+      console.println("Sync complete: no records are newer than the persisted cursor. Imported=0.");
+      return;
+    }
+
+    List<ImportRecord> records = new ArrayList<>();
+    Set<java.time.Instant> timestamps = new HashSet<>();
+    boolean cursorReached = false;
+    int skippedNonValues = 0;
+    int position = newestPagePosition;
+    ReadRangeAck page = newestPage;
+    while (true) {
+      for (Encodable entry : page.getItemData()) {
+        if (!(entry instanceof LogRecord)) {
+          console.println("Sync aborted before persistence: unexpected record type " + entry.getClass().getName());
+          return;
+        }
+        LogRecord source = (LogRecord) entry;
+        ZonedDateTime timestamp = toZonedDateTime(source, zone);
+        if (!timestamp.toInstant().isAfter(cursor)) {
+          cursorReached = true;
+          continue;
+        }
+        if (source.isLogStatus() || source.isTimeChange() || source.isNull() || source.isBACnetError()) {
+          skippedNonValues++;
+          continue;
+        }
+        ImportRecord record = toImportRecord(entry, item, zone);
+        if (!timestamps.add(record.timestamp.toInstant())) {
+          console.println("Sync aborted before persistence: duplicate timestamp " + record.timestamp + ".");
+          return;
+        }
+        records.add(record);
+      }
+      if (cursorReached || position == 1) {
+        break;
+      }
+      int previousPosition = Math.max(1, position - PAGE_SIZE);
+      int requested = position - previousPosition;
+      position = previousPosition;
+      page = TrendLogs.readByPosition(client, object, position, requested);
+      if (page.getItemCount().intValue() != requested) {
+        console.println("Sync aborted before persistence: position=" + position + " requested=" + requested
+            + " returned=" + page.getItemCount() + ".");
+        return;
+      }
+    }
+
+    records.sort(Comparator.comparing(record -> record.timestamp.toInstant()));
+    ImportRecord previous = null;
+    for (ImportRecord record : records) {
+      if (previous != null && !record.timestamp.toInstant().isAfter(previous.timestamp.toInstant())) {
+        console.println("Sync aborted before persistence: timestamps are not strictly increasing at "
+            + record.timestamp + ".");
+        return;
+      }
+      previous = record;
+    }
+
+    ReadRangeAck newestCheck = TrendLogs.readByPosition(client, object, recordCount, 1);
+    if (newestCheck.getItemCount().intValue() != 1
+        || !newestSignature.equals(newestCheck.getItemData().get(0).toString())) {
+      console.println("Sync aborted before persistence: the circular buffer moved while it was being read.");
+      return;
+    }
+    int finalRecordCount = readUnsignedProperty(client, object, "record-count");
+    if (finalRecordCount != recordCount) {
+      console.println("Sync aborted before persistence: record-count changed from " + recordCount + " to "
+          + finalRecordCount + ".");
+      return;
+    }
+    if (!cursorReached) {
+      console.println("Warning: persisted cursor is older than the retained controller buffer; an earlier history gap "
+          + "may exist. All retained newer values will be imported.");
+    }
+    if (records.isEmpty()) {
+      console.println("Sync complete: no new value records to import; skipped non-value records=" + skippedNonValues
+          + ".");
+      return;
+    }
+
+    console.println("Snapshot is stable. Persisting " + records.size() + " new records to " + persistence.getId()
+        + ".");
+    int stored = 0;
+    for (ImportRecord record : records) {
+      try {
+        modifiablePersistence.store(item, record.timestamp, record.state);
+        stored++;
+      } catch (RuntimeException e) {
+        console.println("Persistence sync failed after " + stored + "/" + records.size() + " records: "
+            + e.getClass().getSimpleName() + ": " + e.getMessage());
+        return;
+      }
+    }
+    console.println("Sync complete: Imported=" + stored + "; skippedNonValues=" + skippedNonValues + "; item="
+        + item.getName() + "; service=" + persistence.getId() + "; controllerZone=" + zone + ".");
   }
 
   private int readUnsignedProperty(BacNetClient client, BacNetObject object, String property) {
