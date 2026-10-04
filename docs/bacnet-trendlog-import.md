@@ -81,3 +81,17 @@ bacnet-trendlog import-all co7io-bacnet:ip-device:192_168_11_255:0_1001 4 1000 I
 Только после сообщения `Snapshot is stable` начинается запись в InfluxDB. Повторный импорт
 тех же Item и timestamp остаётся идемпотентным для InfluxDB. Команда ручная: фоновые задачи,
 таймеры и автоматический курсор этим этапом не добавляются.
+
+### Проверенный результат на IQ3
+
+4 октября 2026 года полный импорт `TREND_LOG:4` с заполненным кольцевым буфером успешно
+проверен на openHAB 5.2.1:
+
+```text
+Validated 1000/1000 records.
+Snapshot is stable. Persisting 1000 records to influxdb.
+Imported=1000; item=InfluxDB_Connection_Test; service=influxdb; controllerZone=Europe/Moscow; openHABZone=Europe/Moscow.
+```
+
+Во время проверки binding оставался `Active`; wrapper API/IP/MSTP не обновлялись. Текущее
+состояние Item не менялось. Это контрольная точка до разработки автоматической синхронизации.
