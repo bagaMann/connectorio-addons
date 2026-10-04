@@ -57,7 +57,7 @@ public class TrendLogCommand extends AbstractConsoleCommandExtension {
         console.println("Specify the BACnet DEVICE Thing UID, not a network bridge or an Item.");
         return;
       }
-      BACnetDeviceHandler handler = (BACnetDeviceHandler) thing.getHandler();
+      BACnetDeviceHandler<?> handler = (BACnetDeviceHandler<?>) thing.getHandler();
       Device device = handler.getDevice();
       if (device == null) {
         console.println("BACnet device is not initialized.");
