@@ -56,7 +56,7 @@ mvn -U -Popenhab -pl bundles/org.connectorio.addons.binding.bacnet -am package -
 4 октября 2026 года среда разработки подготовлена локально: Maven 3.9.9 и Eclipse Temurin
 JDK 21.0.12.1, сетевой прокси Maven и системное доверенное хранилище сертификатов.
 Сборка wrapper API и полный reactor биндинга с указанными выше параметрами завершились
-`BUILD SUCCESS`. Тесты пропущены (`-DskipTests`); проверки на контроллере ещё ожидаются.
+`BUILD SUCCESS`. Тесты пропущены (`-DskipTests`); ручное чтение IQ3 подтверждено ниже.
 Проверены наличие `TrendLogs.class` в API JAR и `TrendLogCommand.class` с OSGi декларацией
 консольного сервиса в JAR биндинга. При полной компиляции исправлен generic-параметр
 обработчика в новой команде (`BACnetDeviceHandler<?>`).
@@ -75,7 +75,8 @@ BBMD. Для этой компиляции они установлены из п
 Сначала в openHAB console проверить реальные IDs:
 
 ```text
-bundle:list | grep -Ei 'BACnet|Bacnet4J|Temporal'
+bundle:list | grep -i bacnet
+bundle:list | grep -i temporal
 ```
 
 В проверенной установке: 265 API, 266 IP, 267 MSTP, 269 BACnet binding.
@@ -86,7 +87,8 @@ bundle:update 265 file:/opt/bacnet-dev/trendlog-test/wrapper/api/target/api-1.3.
 bundle:update 269 file:/opt/bacnet-dev/trendlog-test/addons/bundles/org.connectorio.addons.binding.bacnet/target/org.connectorio.addons.binding.bacnet-5.0.0-SNAPSHOT.jar
 bundle:refresh 265 269
 bundle:start 266 267 269
-bundle:list | grep -Ei 'BACnet|Bacnet4J|Temporal'
+bundle:list | grep -i bacnet
+bundle:list | grep -i temporal
 ```
 
 Refresh может кратковременно перезапустить зависимые bundles. При `Installed`/ошибке:
@@ -127,8 +129,32 @@ bacnet-trendlog read co7io-bacnet:ip-device:192_168_11_255:0_1001 4 6 5
 вызовы не являются алгоритмом синхронизации; по позициям нельзя надёжно дедуплицировать архив.
 
 После обновления отдельно проверить прежние чтения/COV и запись weekly schedule с readback.
-Сборка подтверждена; тест IQ3 ожидается. Успешность чтения архива этой веткой
-и отсутствие регрессий на реальном устройстве ещё не подтверждены.
+Сборка и ручное чтение IQ3 подтверждены. Отсутствие регрессий расписаний/COV после
+этого обновления пока не подтверждено отдельным тестом пользователя.
+
+## Результаты на IQ3, 4 октября 2026
+
+Пользователь собрал wrapper API `53149cd` и binding `f88e5e21` с `BUILD SUCCESS`,
+обновил JAR из каталогов `trendlog-test` и успешно выполнил три чтения.
+Устройство 1001, TRENDLOG:4, object-name — **Давление ХВС** (не ГВС).
+
+- Позиция 1, count 5: 01.10.2026 00:25–00:45; Real, пять записей.
+- Позиция 6, count 5, при более позднем вызове: 01.10.2026 01:00–01:20.
+- Позиция 996, count 5: 04.10.2026 11:30–11:50; last-item=true.
+- Все показанные status flags false.
+- record-count=1000, buffer-size=1000, log-interval=0.
+- firstSequenceNumber=null во всех ответах; нельзя рассчитывать на номер первой записи.
+- Внутри показанных порций временной шаг 5 минут. Нулевой log-interval нельзя
+  использовать как свидетельство отсутствия записей или как оценку фактического шага.
+- more-items=false встречается и на промежуточных порциях; конец буфера определяется
+  last-item, а не только more-items.
+
+Разрыв между первой и второй порциями согласуется со сдвигом позиций заполненного
+кольцевого буфера между вызовами. Позиции не являются устойчивыми идентификаторами.
+При разработке импорта нужна обработка сдвига/перекрытия и проверка полноты данных.
+Эти тесты подтверждают ручное чтение небольших порций; выгрузка всего буфера,
+импорт persistence, дубли/переполнение и преобразование часового пояса ещё не проверены.
+Записи не очищались и Items не обновлялись.
 
 ## Следующий этап после проверки чтения
 
