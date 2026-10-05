@@ -404,6 +404,9 @@
     <description>Imports new BACnet Trend Log records into a selected persistence Item.</description>
 
     <channels>
+      <channel id="initialize-archive" typeId="trendLogInitializeArchive"/>
+      <channel id="latest-value" typeId="trendLogLatestValue"/>
+      <channel id="latest-record-time" typeId="trendLogLatestRecordTime"/>
       <channel id="last-sync" typeId="trendLogLastSync"/>
       <channel id="last-imported" typeId="trendLogLastImported"/>
       <channel id="status" typeId="trendLogStatus"/>
