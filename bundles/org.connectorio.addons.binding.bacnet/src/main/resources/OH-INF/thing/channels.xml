@@ -256,4 +256,28 @@
     <config-description-ref uri="thing-type:co7io-bacnet:device-week-schedule-read-write"></config-description-ref>
   </channel-type>
 
+  <channel-type id="trendLogLastSync">
+    <item-type>Text</item-type>
+    <label>Last synchronization attempt</label>
+    <description>Time when this Trend Log Sync Thing last ran.</description>
+  </channel-type>
+
+  <channel-type id="trendLogLastImported">
+    <item-type>Number</item-type>
+    <label>Records imported last run</label>
+    <description>Number of historical value records imported by the last completed run.</description>
+  </channel-type>
+
+  <channel-type id="trendLogStatus">
+    <item-type>Text</item-type>
+    <label>Synchronization status</label>
+    <description>Latest guarded synchronization result.</description>
+  </channel-type>
+
+  <channel-type id="trendLogLastError">
+    <item-type>Text</item-type>
+    <label>Last synchronization error</label>
+    <description>Latest synchronization error or None after a successful run.</description>
+  </channel-type>
+
 </thing:thing-descriptions>

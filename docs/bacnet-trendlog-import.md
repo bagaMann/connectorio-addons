@@ -116,3 +116,29 @@ Item пуста, сначала обязательно выполнить про
 
 Служебные записи BACnet (`log-status`, `time-change`, `Null`, BACnet Error) не импортируются,
 но учитываются при движении по буферу. Автоматический таймер этим этапом ещё не добавляется.
+
+## MainUI: Trend Log Sync Thing
+
+Ветка `feature/bacnet-trendlog-ui-sync` добавляет дочерний Thing `BACnet Trend Log Sync`.
+Он создаётся в MainUI под соответствующим BACnet/IP или BACnet/MSTP device и содержит
+отдельную настройку одного Trend Log. Обычная эксплуатация больше не требует консольной
+команды: MainUI хранит instance, архивный Item, persistence-службу, часовую зону и интервал.
+
+Для каждого Trend Log создать отдельный Thing и выбрать:
+
+- `Trend Log instance` — BACnet instance журнала;
+- `Archive Item` — выделенный Item без live-канала;
+- `Persistence service` — `influxdb`;
+- `Controller time zone` — `Europe/Moscow`;
+- `Enable automatic synchronization` — выключено до первой инициализации;
+- `Synchronization interval` — 600 секунд для журнала IQ3 с шагом пять минут.
+
+Перед первым включением archive Item необходимо один раз заполнить существующей командой
+`import-all`. Она остаётся диагностическим и восстановительным инструментом вместе с
+`read`, `import-page` и ручным `sync`. После появления курсора в InfluxDB включённый Thing
+сам запускает тот же guarded timestamp-based sync. При ошибке или сдвиге буфера записи в
+persistence не выполняются.
+
+Thing публикует UI-каналы `last-sync`, `last-imported`, `status` и `last-error`. Их можно
+связать с обычными Text/Number Item и разместить на странице MainUI; сам архивный Item
+открывается в Analyzer как график накопленной истории.

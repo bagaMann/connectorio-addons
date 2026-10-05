@@ -70,6 +70,7 @@ public interface BACnetBindingConstants {
     String TIME_PATTERN_TYPE = "time-pattern";
     String DATE_PATTERN_TYPE = "date-pattern";
     String ACCUMULATOR_TYPE = "accumulator";
+    String TREND_LOG_SYNC_TYPE = "trendlog-sync";
 
     ThingTypeUID IPV4_BRIDGE_THING_TYPE = new ThingTypeUID(BINDING_ID, IPV4_BRIDGE_TYPE);
     ThingTypeUID MSTP_BRIDGE_THING_TYPE = new ThingTypeUID(BINDING_ID, MSTP_BRIDGE_TYPE);
@@ -108,6 +109,7 @@ public interface BACnetBindingConstants {
     ThingTypeUID TIME_PATTERN_THING_TYPE = new ThingTypeUID(BINDING_ID, TIME_PATTERN_TYPE);
     ThingTypeUID DATE_PATTERN_THING_TYPE = new ThingTypeUID(BINDING_ID, DATE_PATTERN_TYPE);
     ThingTypeUID ACCUMULATOR_THING_TYPE = new ThingTypeUID(BINDING_ID, ACCUMULATOR_TYPE);
+    ThingTypeUID TREND_LOG_SYNC_THING_TYPE = new ThingTypeUID(BINDING_ID, TREND_LOG_SYNC_TYPE);
 
     Long DEFAULT_POLLING_INTERVAL = 60000L;
 

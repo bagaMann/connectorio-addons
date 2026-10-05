@@ -394,4 +394,64 @@
     </config-description>
   </bridge-type>
 
+  <thing-type id="trendlog-sync">
+    <supported-bridge-type-refs>
+      <bridge-type-ref id="ip-device"/>
+      <bridge-type-ref id="mstp-device"/>
+    </supported-bridge-type-refs>
+
+    <label>BACnet Trend Log Sync</label>
+    <description>Imports new BACnet Trend Log records into a selected persistence Item.</description>
+
+    <channels>
+      <channel id="last-sync" typeId="trendLogLastSync"/>
+      <channel id="last-imported" typeId="trendLogLastImported"/>
+      <channel id="status" typeId="trendLogStatus"/>
+      <channel id="last-error" typeId="trendLogLastError"/>
+    </channels>
+
+    <config-description>
+      <parameter-group name="archive">
+        <label>Archive destination</label>
+        <description>Select the dedicated Item and persistence service which receive the historical records.</description>
+      </parameter-group>
+      <parameter-group name="schedule">
+        <label>Automatic synchronization</label>
+        <description>The sync reads only records newer than the last persisted timestamp.</description>
+      </parameter-group>
+
+      <parameter name="instance" type="integer" required="true" min="0" max="4194302">
+        <label>Trend Log instance</label>
+        <description>BACnet instance number of the Trend Log object.</description>
+      </parameter>
+      <parameter name="itemName" type="text" groupName="archive" required="true">
+        <context>item</context>
+        <label>Archive Item</label>
+        <description>Dedicated Item for this archive. Do not link it to a live BACnet channel.</description>
+      </parameter>
+      <parameter name="persistenceService" type="text" groupName="archive" required="true">
+        <context>service</context>
+        <label>Persistence service</label>
+        <description>Service that stores the historical timestamps, for example influxdb.</description>
+        <default>influxdb</default>
+      </parameter>
+      <parameter name="controllerZone" type="text" groupName="archive" required="true">
+        <label>Controller time zone</label>
+        <description>IANA time zone used by the controller Trend Log timestamps.</description>
+        <default>Europe/Moscow</default>
+      </parameter>
+      <parameter name="enabled" type="boolean" groupName="schedule" required="false">
+        <label>Enable automatic synchronization</label>
+        <description>Keep disabled until the archive Item has been initialized with its retained Trend Log history.</description>
+        <default>false</default>
+      </parameter>
+      <parameter name="intervalSeconds" type="integer" groupName="schedule" required="false" min="60">
+        <label>Synchronization interval</label>
+        <description>Interval between guarded incremental sync runs.</description>
+        <unitLabel>s</unitLabel>
+        <default>600</default>
+      </parameter>
+    </config-description>
+  </thing-type>
+
 </thing:thing-descriptions>

@@ -25,6 +25,7 @@ import org.connectorio.addons.binding.bacnet.internal.handler.network.BACnetIpv4
 import org.connectorio.addons.binding.bacnet.internal.handler.network.BACnetMstpBridgeHandler;
 import org.connectorio.addons.binding.bacnet.internal.handler.object.BACnetIpDeviceHandler;
 import org.connectorio.addons.binding.bacnet.internal.handler.object.BACnetMstpDeviceHandler;
+import org.connectorio.addons.binding.bacnet.internal.handler.trendlog.BACnetTrendLogSyncHandler;
 import org.connectorio.addons.binding.source.SourceFactory;
 import org.connectorio.addons.communication.watchdog.WatchdogManager;
 import org.connectorio.addons.link.LinkManager;
@@ -35,6 +36,8 @@ import org.openhab.core.thing.binding.BaseThingHandlerFactory;
 import org.openhab.core.thing.binding.ThingHandler;
 import org.openhab.core.thing.binding.ThingHandlerFactory;
 import org.openhab.core.io.transport.serial.SerialPortManager;
+import org.openhab.core.items.ItemRegistry;
+import org.openhab.core.persistence.PersistenceServiceRegistry;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -51,17 +54,22 @@ public class BACnetThingHandlerFactory extends BaseThingHandlerFactory implement
   private final WatchdogManager watchdogManager;
   private final SourceFactory sourceFactory;
   private final BACnetStateDescriptionProvider stateDescriptionProvider;
+  private final ItemRegistry items;
+  private final PersistenceServiceRegistry persistenceServices;
 
   @Activate
   public BACnetThingHandlerFactory(@Reference SerialPortManager serialPortManager, @Reference LinkManager linkManager,
       @Reference(target = "(default=true)") SourceFactory sourceFactory,
       @Reference WatchdogManager watchdogManager,
-      @Reference BACnetStateDescriptionProvider stateDescriptionProvider) {
+      @Reference BACnetStateDescriptionProvider stateDescriptionProvider, @Reference ItemRegistry items,
+      @Reference PersistenceServiceRegistry persistenceServices) {
     this.serialPortManager = serialPortManager;
     this.linkManager = linkManager;
     this.sourceFactory = sourceFactory;
     this.watchdogManager = watchdogManager;
     this.stateDescriptionProvider = stateDescriptionProvider;
+    this.items = items;
+    this.persistenceServices = persistenceServices;
   }
 
   @Override
@@ -82,6 +90,10 @@ public class BACnetThingHandlerFactory extends BaseThingHandlerFactory implement
       }
     }
 
+    if (TREND_LOG_SYNC_THING_TYPE.equals(thingTypeUID)) {
+      return new BACnetTrendLogSyncHandler(thing, items, persistenceServices);
+    }
+
     return null;
   }
 
@@ -90,7 +102,8 @@ public class BACnetThingHandlerFactory extends BaseThingHandlerFactory implement
     return IPV4_BRIDGE_THING_TYPE.equals(thingTypeUID)
       || MSTP_BRIDGE_THING_TYPE.equals(thingTypeUID)
       || IP_DEVICE_THING_TYPE.equals(thingTypeUID)
-      || MSTP_DEVICE_THING_TYPE.equals(thingTypeUID);
+      || MSTP_DEVICE_THING_TYPE.equals(thingTypeUID)
+      || TREND_LOG_SYNC_THING_TYPE.equals(thingTypeUID);
   }
 
 }

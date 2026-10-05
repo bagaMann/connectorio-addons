@@ -27,6 +27,7 @@ import org.code_house.bacnet4j.wrapper.api.TrendLogs;
 import org.code_house.bacnet4j.wrapper.api.Type;
 import org.connectorio.addons.binding.bacnet.internal.handler.channel.converter.CompositeConverter;
 import org.connectorio.addons.binding.bacnet.internal.handler.object.BACnetDeviceHandler;
+import org.connectorio.addons.binding.bacnet.internal.trendlog.TrendLogSync;
 import org.openhab.core.i18n.TimeZoneProvider;
 import org.openhab.core.io.console.Console;
 import org.openhab.core.io.console.extensions.AbstractConsoleCommandExtension;
@@ -120,7 +121,9 @@ public class TrendLogCommand extends AbstractConsoleCommandExtension {
         return;
       }
       if (sync) {
-        sync(args, client, object, console);
+        TrendLogSync.Result result = new TrendLogSync(items, persistenceServices).sync(client, object, args[3], args[4],
+            ZoneId.of(args[5]));
+        result.getMessages().forEach(console::println);
         return;
       }
       console.println("Reading " + object + "; buffer position=" + position + ", count=" + count);
