@@ -99,7 +99,7 @@ public class CompositeConverter implements BacNetToJavaConverter<State> {
     } else if (encodable instanceof SignedInteger) {
       return new DecimalType(((SignedInteger) encodable).intValue());
     } else if (encodable instanceof Boolean) {
-      return Boolean.TRUE == encodable ? OnOffType.ON : OnOffType.OFF;
+      return ((Boolean) encodable).booleanValue() ? OnOffType.ON : OnOffType.OFF;
     } else if (encodable instanceof Time) {
       Time time = (Time) encodable;
       LocalTime localTime = LocalTime.of(time.getHour(), time.getMinute(), time.getSecond(), time.getHundredth());
