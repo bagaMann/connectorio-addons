@@ -256,6 +256,24 @@
     <config-description-ref uri="thing-type:co7io-bacnet:device-week-schedule-read-write"></config-description-ref>
   </channel-type>
 
+  <channel-type id="trendLogInitializeArchive">
+    <item-type>Switch</item-type>
+    <label>Initialize archive</label>
+    <description>Send ON once to import the complete retained Trend Log buffer into the configured persistence archive. Existing initialized archives are not re-imported.</description>
+  </channel-type>
+
+  <channel-type id="trendLogLatestValue">
+    <item-type>String</item-type>
+    <label>Latest archived value</label>
+    <description>Latest value stored in the configured persistence archive.</description>
+  </channel-type>
+
+  <channel-type id="trendLogLatestRecordTime">
+    <item-type>String</item-type>
+    <label>Latest archived record time</label>
+    <description>Timestamp of the latest value stored in the configured persistence archive.</description>
+  </channel-type>
+
   <channel-type id="trendLogLastSync">
     <item-type>Text</item-type>
     <label>Last synchronization attempt</label>
