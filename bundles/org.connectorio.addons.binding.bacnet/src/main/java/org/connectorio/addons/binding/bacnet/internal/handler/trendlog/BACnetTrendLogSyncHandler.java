@@ -27,6 +27,7 @@ import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.ThingStatusDetail;
 import org.openhab.core.thing.binding.BaseThingHandler;
+import org.openhab.core.types.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +47,13 @@ public class BACnetTrendLogSyncHandler extends BaseThingHandler {
       PersistenceServiceRegistry persistenceServices) {
     super(thing);
     this.trendLogSync = new TrendLogSync(items, persistenceServices);
+  }
+
+  @Override
+  public void handleCommand(ChannelUID channelUID, Command command) {
+    // All channels exposed by the Trend Log Sync Thing are status channels maintained by the handler.
+    // They are intentionally read-only; external commands must not trigger BACnet writes or persistence changes.
+    logger.debug("Ignoring command {} for read-only Trend Log Sync channel {}", command, channelUID);
   }
 
   @Override
