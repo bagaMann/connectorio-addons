@@ -52,6 +52,110 @@ public class TrendLogSync {
     this.persistenceServices = persistenceServices;
   }
 
+  /**
+   * Initializes an empty archive from the complete retained Trend Log buffer.
+   *
+   * <p>The complete buffer is read and validated before anything is persisted. The first record and record count
+   * are re-checked after the read so a moving circular buffer cannot be silently imported as one snapshot.</p>
+   */
+  public Result initialize(BacNetClient client, BacNetObject object, String itemName, String persistenceServiceId,
+      ZoneId zone) throws ItemNotFoundException {
+    List<String> messages = new ArrayList<>();
+    Item item = items.getItem(itemName);
+    PersistenceService persistence = persistenceServices.get(persistenceServiceId);
+    if (persistence == null) {
+      return Result.aborted(messages, "Persistence service not found: " + persistenceServiceId);
+    }
+    if (!(persistence instanceof ModifiablePersistenceService)) {
+      return Result.aborted(messages,
+          "Persistence service does not support historical timestamp queries and writes: " + persistenceServiceId);
+    }
+    ModifiablePersistenceService modifiablePersistence = (ModifiablePersistenceService) persistence;
+    PersistedItem existing = modifiablePersistence.persistedItem(item.getName(), null);
+    if (existing != null) {
+      return Result.complete(messages, 0, 0,
+          "Archive is already initialized. Latest persisted cursor: " + existing.getTimestamp() + ".");
+    }
+
+    int recordCount = readUnsignedProperty(client, object, "record-count");
+    int bufferSize = readUnsignedProperty(client, object, "buffer-size");
+    if (recordCount < 1 || recordCount > bufferSize || recordCount > MAX_RECORDS) {
+      return Result.aborted(messages,
+          "Initialization aborted: invalid record-count=" + recordCount + ", buffer-size=" + bufferSize + ".");
+    }
+
+    messages.add("Reading stable snapshot of " + recordCount + " records from " + object + " in pages of "
+        + PAGE_SIZE + ". Nothing will be persisted until the complete snapshot is validated.");
+    List<ImportRecord> records = new ArrayList<>(recordCount);
+    Set<Instant> timestamps = new HashSet<>(recordCount);
+    ImportRecord previous = null;
+    for (int position = 1; position <= recordCount; position += PAGE_SIZE) {
+      int requested = Math.min(PAGE_SIZE, recordCount - position + 1);
+      ReadRangeAck ack = TrendLogs.readByPosition(client, object, position, requested);
+      if (ack.getItemCount().intValue() != requested) {
+        return Result.aborted(messages, "Initialization aborted before persistence: position=" + position
+            + " requested=" + requested + " returned=" + ack.getItemCount() + ".");
+      }
+      for (Encodable entry : ack.getItemData()) {
+        ImportRecord record;
+        try {
+          record = toImportRecord(entry, item, zone);
+        } catch (IllegalArgumentException e) {
+          return Result.aborted(messages, "Initialization aborted before persistence: " + e.getMessage());
+        }
+        if (!timestamps.add(record.timestamp.toInstant())) {
+          return Result.aborted(messages,
+              "Initialization aborted before persistence: duplicate timestamp " + record.timestamp + ".");
+        }
+        if (previous != null && !record.timestamp.toInstant().isAfter(previous.timestamp.toInstant())) {
+          return Result.aborted(messages, "Initialization aborted before persistence: timestamps are not strictly "
+              + "increasing at " + record.timestamp + ". The circular buffer may have moved.");
+        }
+        records.add(record);
+        previous = record;
+      }
+    }
+
+    ReadRangeAck firstCheck = TrendLogs.readByPosition(client, object, 1, 1);
+    if (firstCheck.getItemCount().intValue() != 1) {
+      return Result.aborted(messages,
+          "Initialization aborted before persistence: could not re-check the first buffer record.");
+    }
+    ImportRecord firstNow;
+    try {
+      firstNow = toImportRecord(firstCheck.getItemData().get(0), item, zone);
+    } catch (IllegalArgumentException e) {
+      return Result.aborted(messages,
+          "Initialization aborted before persistence while re-checking first record: " + e.getMessage());
+    }
+    ImportRecord firstSnapshot = records.get(0);
+    if (!firstSnapshot.timestamp.toInstant().equals(firstNow.timestamp.toInstant())
+        || !firstSnapshot.state.equals(firstNow.state)) {
+      return Result.aborted(messages,
+          "Initialization aborted before persistence: the circular buffer moved while it was being read.");
+    }
+    int finalRecordCount = readUnsignedProperty(client, object, "record-count");
+    if (finalRecordCount != recordCount) {
+      return Result.aborted(messages, "Initialization aborted before persistence: record-count changed from "
+          + recordCount + " to " + finalRecordCount + ".");
+    }
+
+    messages.add("Snapshot is stable. Persisting " + records.size() + " records to " + persistence.getId() + ".");
+    int stored = 0;
+    for (ImportRecord record : records) {
+      try {
+        modifiablePersistence.store(item, record.timestamp, record.state);
+        stored++;
+      } catch (RuntimeException e) {
+        return Result.aborted(messages, "Persistence initialization failed after " + stored + "/" + records.size()
+            + " records: " + e.getClass().getSimpleName() + ": " + e.getMessage());
+      }
+    }
+    return Result.complete(messages, stored, 0,
+        "Archive initialized: Imported=" + stored + "; item=" + item.getName() + "; service="
+            + persistence.getId() + "; controllerZone=" + zone + ".");
+  }
+
   public Result sync(BacNetClient client, BacNetObject object, String itemName, String persistenceServiceId,
       ZoneId zone) throws ItemNotFoundException {
     List<String> messages = new ArrayList<>();
