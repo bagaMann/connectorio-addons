@@ -98,7 +98,7 @@ public class TrendLogCommand extends AbstractConsoleCommandExtension {
           : importPage ? Integer.parseInt(args[3]) : 1;
       int count = read ? (args.length == 5 ? Integer.parseInt(args[4]) : 5)
           : importPage ? Integer.parseInt(args[4]) : 0;
-      if (!importAll && (position < 1 || count < 1 || count > PAGE_SIZE)) {
+      if ((read || importPage) && (position < 1 || count < 1 || count > PAGE_SIZE)) {
         console.println("Position must be >= 1 and count 1.." + PAGE_SIZE + ".");
         return;
       }
