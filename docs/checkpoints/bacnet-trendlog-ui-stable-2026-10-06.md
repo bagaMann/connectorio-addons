@@ -7,7 +7,7 @@ This checkpoint records the exact source pair selected for work-machine testing.
 - connectorio-addons: `stable/bacnet-trendlog-ui-2026-10-06`
   - SHA: `e89b514a9a19ad91682f2dc8b65a5f717835120b`
 - bacnet4j-wrapper: `stable/bacnet-trendlog-ui-2026-10-06`
-  - SHA: `53149cd1d0642880e23c95648fb0c177b2791b81`
+  - SHA: `835d0be129fece6daf9e187d036cb9c75b7903c8`
 
 ## Confirmed functionality before freezing
 
@@ -72,3 +72,17 @@ sha256sum /opt/bacnet-dev/releases/bacnet-trendlog-ui-2026-10-06/*
 ```
 
 Do not continue feature development directly on this stable branch.
+
+
+## Final stable binary checksums
+
+Built successfully on 2026-10-06 with the stable source pair above.
+
+- JAR: `org.connectorio.addons.binding.bacnet-5.0.0-STABLE-2026-10-06.jar`
+  - size observed: 177K
+  - SHA256: `47caf93226b3bf9eeb77039aee1400cee9c962e7733c05a1754f8585f2bdde22`
+- KAR: `org.connectorio.addons.kar.bacnet-5.0.0-STABLE-2026-10-06.kar`
+  - size observed: 1.7M
+  - SHA256: `8c38b32e05e583b8aa086bb56ec0c7bf9de8df61bad4d8ea7645eeaf897a0875`
+
+The complete BACnet KAR reactor finished with `BUILD SUCCESS`.
